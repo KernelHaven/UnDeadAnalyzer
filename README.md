@@ -1,5 +1,5 @@
 # UnDeadAnalyzer
-Analyzer plug-in to detect dead code blocks, or Kconfig (`CONFIG\_`) variables,
+Analyzer plug-in to detect dead code blocks, or Kconfig (`CONFIG_`) variables,
 which are either:
 * defined in Kconfig but not used in code or build files
 * used in code or build files, but not defined in Kconfig
