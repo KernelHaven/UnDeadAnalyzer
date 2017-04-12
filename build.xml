@@ -72,7 +72,7 @@
 		<mkdir dir="${reports.xml.dir}" />
 		<mkdir dir="${reports.html.dir}" />
 		<get src="http://jenkins.sse.uni-hildesheim.de/job/KernelHaven_Infrastructure/lastSuccessfulBuild/artifact/build/jar/kernelhaven.jar" dest="${dependencies.dir}/kernelhaven.jar" />
-		<get src="http://147.172.160.32:8080/job/CnfUtils/lastStableBuild/artifact/build/jar/cnfutils.jar" dest="${dependencies.dir}/cnfutils.jar" />
+		<get src="http://jenkins.sse.uni-hildesheim.de/job/KernelHaven_CnfUtils/lastStableBuild/artifact/build/jar/cnfutils.jar" dest="${dependencies.dir}/cnfutils.jar" />
 	</target>
 
 	<target name="compile" depends="init">
