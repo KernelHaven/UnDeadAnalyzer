@@ -1,31 +1,31 @@
-package de.uni_hildesheim.sse.kernel_haven.default_analyses;
+package net.ssehub.kernel_haven.default_analyses;
 
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.uni_hildesheim.sse.kernel_haven.SetUpException;
-import de.uni_hildesheim.sse.kernel_haven.analysis.AbstractAnalysis;
-import de.uni_hildesheim.sse.kernel_haven.build_model.BuildModel;
-import de.uni_hildesheim.sse.kernel_haven.cnf.Cnf;
-import de.uni_hildesheim.sse.kernel_haven.cnf.ConverterException;
-import de.uni_hildesheim.sse.kernel_haven.cnf.FormulaToCnfConverterFactory;
-import de.uni_hildesheim.sse.kernel_haven.cnf.FormulaToCnfConverterFactory.Strategy;
-import de.uni_hildesheim.sse.kernel_haven.cnf.IFormulaToCnfConverter;
-import de.uni_hildesheim.sse.kernel_haven.cnf.SatSolver;
-import de.uni_hildesheim.sse.kernel_haven.cnf.SolverException;
-import de.uni_hildesheim.sse.kernel_haven.cnf.VmToCnfConverter;
-import de.uni_hildesheim.sse.kernel_haven.code_model.Block;
-import de.uni_hildesheim.sse.kernel_haven.code_model.CodeModelProvider;
-import de.uni_hildesheim.sse.kernel_haven.code_model.SourceFile;
-import de.uni_hildesheim.sse.kernel_haven.config.Configuration;
-import de.uni_hildesheim.sse.kernel_haven.util.CodeExtractorException;
-import de.uni_hildesheim.sse.kernel_haven.util.ExtractorException;
-import de.uni_hildesheim.sse.kernel_haven.util.FormatException;
-import de.uni_hildesheim.sse.kernel_haven.util.logic.Conjunction;
-import de.uni_hildesheim.sse.kernel_haven.util.logic.Formula;
-import de.uni_hildesheim.sse.kernel_haven.variability_model.VariabilityModel;
+import net.ssehub.kernel_haven.SetUpException;
+import net.ssehub.kernel_haven.analysis.AbstractAnalysis;
+import net.ssehub.kernel_haven.build_model.BuildModel;
+import net.ssehub.kernel_haven.cnf.Cnf;
+import net.ssehub.kernel_haven.cnf.ConverterException;
+import net.ssehub.kernel_haven.cnf.FormulaToCnfConverterFactory;
+import net.ssehub.kernel_haven.cnf.IFormulaToCnfConverter;
+import net.ssehub.kernel_haven.cnf.SatSolver;
+import net.ssehub.kernel_haven.cnf.SolverException;
+import net.ssehub.kernel_haven.cnf.VmToCnfConverter;
+import net.ssehub.kernel_haven.cnf.FormulaToCnfConverterFactory.Strategy;
+import net.ssehub.kernel_haven.code_model.Block;
+import net.ssehub.kernel_haven.code_model.CodeModelProvider;
+import net.ssehub.kernel_haven.code_model.SourceFile;
+import net.ssehub.kernel_haven.config.Configuration;
+import net.ssehub.kernel_haven.util.CodeExtractorException;
+import net.ssehub.kernel_haven.util.ExtractorException;
+import net.ssehub.kernel_haven.util.FormatException;
+import net.ssehub.kernel_haven.util.logic.Conjunction;
+import net.ssehub.kernel_haven.util.logic.Formula;
+import net.ssehub.kernel_haven.variability_model.VariabilityModel;
 
 /**
  * A simple implementation for dead code detection.

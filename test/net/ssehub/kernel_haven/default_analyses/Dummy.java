@@ -1,4 +1,4 @@
-package de.uni_hildesheim.sse.kernel_haven.defaultanalyses;
+package net.ssehub.kernel_haven.default_analyses;
 
 import static org.junit.Assert.assertTrue;
 

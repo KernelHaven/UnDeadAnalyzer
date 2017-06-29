@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.uni_hildesheim.sse.kernel_haven.defaultanalyses;
+package net.ssehub.kernel_haven.default_analyses;
 
 import java.io.File;
 import java.util.HashSet;
@@ -25,24 +25,23 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.uni_hildesheim.sse.kernel_haven.SetUpException;
-import de.uni_hildesheim.sse.kernel_haven.TestConfiguration;
-import de.uni_hildesheim.sse.kernel_haven.build_model.BuildModel;
-import de.uni_hildesheim.sse.kernel_haven.cnf.ConverterException;
-import de.uni_hildesheim.sse.kernel_haven.cnf.SolverException;
-import de.uni_hildesheim.sse.kernel_haven.code_model.CodeModelCacheTest;
-import de.uni_hildesheim.sse.kernel_haven.code_model.CodeModelProvider;
-import de.uni_hildesheim.sse.kernel_haven.code_model.SourceFile;
-import de.uni_hildesheim.sse.kernel_haven.code_model.TestCodeModelProvider;
-import de.uni_hildesheim.sse.kernel_haven.default_analyses.DeadCodeAnalysis;
-import de.uni_hildesheim.sse.kernel_haven.default_analyses.DeadCodeAnalysis.DeadCodeBlock;
-import de.uni_hildesheim.sse.kernel_haven.util.ExtractorException;
-import de.uni_hildesheim.sse.kernel_haven.util.FormatException;
-import de.uni_hildesheim.sse.kernel_haven.util.Logger;
-import de.uni_hildesheim.sse.kernel_haven.util.logic.Negation;
-import de.uni_hildesheim.sse.kernel_haven.util.logic.Variable;
-import de.uni_hildesheim.sse.kernel_haven.variability_model.VariabilityModel;
-import de.uni_hildesheim.sse.kernel_haven.variability_model.VariabilityVariable;
+import net.ssehub.kernel_haven.SetUpException;
+import net.ssehub.kernel_haven.TestConfiguration;
+import net.ssehub.kernel_haven.build_model.BuildModel;
+import net.ssehub.kernel_haven.cnf.ConverterException;
+import net.ssehub.kernel_haven.cnf.SolverException;
+import net.ssehub.kernel_haven.code_model.CodeModelCacheTest;
+import net.ssehub.kernel_haven.code_model.CodeModelProvider;
+import net.ssehub.kernel_haven.code_model.SourceFile;
+import net.ssehub.kernel_haven.code_model.TestCodeModelProvider;
+import net.ssehub.kernel_haven.default_analyses.DeadCodeAnalysis.DeadCodeBlock;
+import net.ssehub.kernel_haven.util.ExtractorException;
+import net.ssehub.kernel_haven.util.FormatException;
+import net.ssehub.kernel_haven.util.Logger;
+import net.ssehub.kernel_haven.util.logic.Negation;
+import net.ssehub.kernel_haven.util.logic.Variable;
+import net.ssehub.kernel_haven.variability_model.VariabilityModel;
+import net.ssehub.kernel_haven.variability_model.VariabilityVariable;
 
 /**
  * Tests for {@link DeadCodeAnalysis}.
@@ -112,10 +111,11 @@ public class DeadCodeAnalysisTest {
 
     /**
      * Tests a file, which has no dead blocks.
-     * @throws FormatException
-     * @throws ConverterException
-     * @throws SolverException
-     * @throws ExtractorException
+     * 
+     * @throws FormatException unwanted.
+     * @throws ConverterException unwanted.
+     * @throws SolverException unwanted.
+     * @throws ExtractorException unwanted.
      */
     @Test
     public void testNoDeadBlock() throws FormatException, ConverterException, SolverException, ExtractorException {
@@ -125,14 +125,16 @@ public class DeadCodeAnalysisTest {
     
     /**
      * Tests a file, which has a dead code block.
-     * @throws FormatException
-     * @throws ConverterException
-     * @throws SolverException
-     * @throws ExtractorException
+     * 
+     * @throws FormatException unwanted.
+     * @throws ConverterException unwanted.
+     * @throws SolverException unwanted.
+     * @throws ExtractorException unwanted.
      */
     @Test
     public void testDeadBlock() throws FormatException, ConverterException, SolverException, ExtractorException {
-        sFile1.addBlock(new CodeModelCacheTest.PseudoBlock(12, 15, new Negation(new Variable("BETA")),  new Negation(new Variable("BETA"))));
+        sFile1.addBlock(new CodeModelCacheTest.PseudoBlock(12, 15,
+                new Negation(new Variable("BETA")), new Negation(new Variable("BETA"))));
         List<DeadCodeBlock> deadBlocks = analyser.findDeadCodeBlocks(vm, bm, cm);
         Assert.assertFalse(deadBlocks.isEmpty());
         Assert.assertEquals(1, deadBlocks.size());

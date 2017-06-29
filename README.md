@@ -5,8 +5,8 @@ which are either:
 * used in code or build files, but not defined in Kconfig
 
 ## Provides
-* Dead code analysis via: `de.uni_hildesheim.sse.kernel_haven.default_analyses.DeadCodeAnalysis`
-* Unused variables analysis via: `de.uni_hildesheim.sse.kernel_haven.default_analyses.MissingAnalysis`
+* Dead code analysis via: `net.ssehub.kernel_haven.default_analyses.DeadCodeAnalysis`
+* Unused variables analysis via: `net.ssehub.kernel_haven.default_analyses.MissingAnalysis`
 
 ## Prerequisites
 * [CnfUtils](https://github.com/KernelHaven/CnfUtils)

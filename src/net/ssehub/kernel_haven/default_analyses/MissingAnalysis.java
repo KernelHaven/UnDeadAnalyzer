@@ -1,4 +1,4 @@
-package de.uni_hildesheim.sse.kernel_haven.default_analyses;
+package net.ssehub.kernel_haven.default_analyses;
 
 import java.io.File;
 import java.io.PrintStream;
@@ -9,20 +9,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import de.uni_hildesheim.sse.kernel_haven.SetUpException;
-import de.uni_hildesheim.sse.kernel_haven.analysis.AbstractAnalysis;
-import de.uni_hildesheim.sse.kernel_haven.build_model.BuildModel;
-import de.uni_hildesheim.sse.kernel_haven.code_model.Block;
-import de.uni_hildesheim.sse.kernel_haven.code_model.SourceFile;
-import de.uni_hildesheim.sse.kernel_haven.config.Configuration;
-import de.uni_hildesheim.sse.kernel_haven.util.ExtractorException;
-import de.uni_hildesheim.sse.kernel_haven.util.logic.Conjunction;
-import de.uni_hildesheim.sse.kernel_haven.util.logic.Disjunction;
-import de.uni_hildesheim.sse.kernel_haven.util.logic.Formula;
-import de.uni_hildesheim.sse.kernel_haven.util.logic.Negation;
-import de.uni_hildesheim.sse.kernel_haven.util.logic.Variable;
-import de.uni_hildesheim.sse.kernel_haven.variability_model.VariabilityModel;
-import de.uni_hildesheim.sse.kernel_haven.variability_model.VariabilityVariable;
+import net.ssehub.kernel_haven.SetUpException;
+import net.ssehub.kernel_haven.analysis.AbstractAnalysis;
+import net.ssehub.kernel_haven.build_model.BuildModel;
+import net.ssehub.kernel_haven.code_model.Block;
+import net.ssehub.kernel_haven.code_model.SourceFile;
+import net.ssehub.kernel_haven.config.Configuration;
+import net.ssehub.kernel_haven.util.ExtractorException;
+import net.ssehub.kernel_haven.util.logic.Conjunction;
+import net.ssehub.kernel_haven.util.logic.Disjunction;
+import net.ssehub.kernel_haven.util.logic.Formula;
+import net.ssehub.kernel_haven.util.logic.Negation;
+import net.ssehub.kernel_haven.util.logic.Variable;
+import net.ssehub.kernel_haven.variability_model.VariabilityModel;
+import net.ssehub.kernel_haven.variability_model.VariabilityVariable;
 
 /**
  * This Analysis uses a VariabilityVariable an looks in the code and build model to see if it 
