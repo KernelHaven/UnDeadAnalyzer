@@ -2,7 +2,7 @@
 
 
 <!-- author: moritz, kevin -->
-<project name="DummyAnalysis" default="jenkins" basedir="." xmlns:jacoco="antlib:org.jacoco.ant" xmlns:cs="antlib:com.puppycrawl.tools.checkstyle.ant">
+<project name="defaultanalyses" default="jenkins" basedir="." xmlns:jacoco="antlib:org.jacoco.ant" xmlns:cs="antlib:com.puppycrawl.tools.checkstyle.ant">
 	<description>Builds, tests, and runs the project DummyAnalysis.
 	</description>
 
@@ -12,8 +12,7 @@
 	<property name="dependencies.dir" value="${build.dir}/builddependencies" />
 	<property name="checkstyle.dir" value="${lib.dir}" />
 	<property name="checkstyle.file" value="${checkstyle.dir}/checkstyle-7.6-all.jar" />
-	<property name="jar.filename" value="defaultanalyses.jar" />
-	<property name="jar.filename.withsource" value="defaultanalyseswithsource.jar" />
+	<property name="jar.filename.withsource" value="${ant.project.name}withsource.jar" />
 	<property name="classes.dir" value="${build.dir}/classes" />
 	<property name="reports.dir" value="${build.dir}/reports" />
 	<property name="reports.xml.dir" value="${reports.dir}/xml" />
@@ -54,7 +53,7 @@
 
 
 	<target name="jar">
-		<jar destfile="${jar.dir}/${jar.filename}" basedir="${classes.dir}" excludes="**/*Test.class, **/*Tests.class, **/package-info.class" />
+		<jar destfile="${jar.dir}/${ant.project.name}" basedir="${classes.dir}" excludes="**/*Test.class, **/*Tests.class, **/package-info.class" />
 	</target>
 
 	<target name="jarwithsources">
@@ -71,7 +70,7 @@
 		<mkdir dir="${dependencies.dir}" />
 		<mkdir dir="${reports.xml.dir}" />
 		<mkdir dir="${reports.html.dir}" />
-		<get src="http://jenkins.sse.uni-hildesheim.de/job/KernelHaven_Infrastructure/lastSuccessfulBuild/artifact/build/jar/kernelhaven.jar" dest="${dependencies.dir}/kernelhaven.jar" />
+		<get src="http://jenkins.sse.uni-hildesheim.de/job/KernelHaven_Infrastructure/lastSuccessfulBuild/artifact/build/jar/kernelhavenfortesting.jar" dest="${dependencies.dir}/kernelhaven.jar" />
 		<get src="http://jenkins.sse.uni-hildesheim.de/job/KernelHaven_CnfUtils/lastStableBuild/artifact/build/jar/cnfutils.jar" dest="${dependencies.dir}/cnfutils.jar" />
 	</target>
 
