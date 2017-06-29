@@ -133,7 +133,7 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
         LOGGER.logDebug("sat: " + sat);
         
         if (!sat) {
-            DeadCodeBlock deadBlock = new DeadCodeBlock(sourceFile.getPath(), block.getLineStart());
+            DeadCodeBlock deadBlock = new DeadCodeBlock(sourceFile.getPath(), block, filePc);
             LOGGER.logInfo("Found dead block: " + deadBlock);
             result.add(deadBlock);
         }
@@ -150,8 +150,13 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
         
         private File sourceFile;
         
-        private int line;
+        private int startLine;
 
+        private int endLinie;
+        
+        private Formula presenceCondition;
+        private Formula filePc;
+        
         /**
          * Creates a dead code block.
          * @param sourceFile The source file.
@@ -159,12 +164,55 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
          */
         public DeadCodeBlock(File sourceFile, int line) {
             this.sourceFile = sourceFile;
-            this.line = line;
+            this.startLine = line;
+            this.endLinie = 0;
+            this.presenceCondition = null;
+            this.filePc = null;
+        }
+        
+        /**
+         * Converts a {@link Block} into a {@link DeadCodeBlock}.
+         * This constructor stores more information.
+         * @param sourceFile sourceFile The source file.
+         * @param deadBlock A Block which was identified to be a dead code block.
+         * @param filePc The presence condition for the complete file, maybe <tt>null</tt>
+         */
+        public DeadCodeBlock(File sourceFile, Block deadBlock, Formula filePc) {
+            this(sourceFile, deadBlock.getLineStart());
+            this.endLinie = deadBlock.getLineEnd();
+            this.presenceCondition = deadBlock.getPresenceCondition();
+            this.filePc = filePc;
+        }
+        
+        /**
+         * Converts this block to a CSV line using the specified separator.
+         * @param separator Specification how to separate lines, if unsure use &#59;
+         * @return This block in CSV representation.
+         */
+        private String toCSVLine(String separator) {
+            StringBuffer result = new StringBuffer();
+            result.append(sourceFile.getPath());
+            result.append(separator);
+            if (null != filePc) {
+                result.append(filePc.toString());
+            }
+            result.append(separator);
+            result.append(startLine);
+            result.append(separator);
+            if (0 != endLinie) {
+                result.append(endLinie);
+            }
+            result.append(separator);
+            if (null != presenceCondition) {
+                result.append(presenceCondition.toString());
+            }            
+            
+            return result.toString();
         }
         
         @Override
         public String toString() {
-            return sourceFile.getPath() + ";" + line;
+            return toCSVLine(";");
         }
         
     }
@@ -187,6 +235,9 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
             List<DeadCodeBlock> result = findDeadCodeBlocks(vm, bm, cmProvider);
 
             LOGGER.logInfo("Found " + result.size() + " dead code blocks");
+            
+            // Create header
+            resultStream.println("File;Presence Condition of File;Start Line;End Line;Presence Condition of Block");
             
             for (DeadCodeBlock block : result) {
                 resultStream.println(block.toString());
