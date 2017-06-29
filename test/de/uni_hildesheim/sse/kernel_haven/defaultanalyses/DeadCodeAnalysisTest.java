@@ -40,7 +40,6 @@ import de.uni_hildesheim.sse.kernel_haven.util.ExtractorException;
 import de.uni_hildesheim.sse.kernel_haven.util.FormatException;
 import de.uni_hildesheim.sse.kernel_haven.util.Logger;
 import de.uni_hildesheim.sse.kernel_haven.util.logic.Negation;
-import de.uni_hildesheim.sse.kernel_haven.util.logic.True;
 import de.uni_hildesheim.sse.kernel_haven.util.logic.Variable;
 import de.uni_hildesheim.sse.kernel_haven.variability_model.VariabilityModel;
 import de.uni_hildesheim.sse.kernel_haven.variability_model.VariabilityVariable;
