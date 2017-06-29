@@ -1,0 +1,6 @@
+c 1 ALPHA
+c 2 BETA
+c 3 GAMMA
+p cnf 3 2
+-1 2 0
+-3 0
