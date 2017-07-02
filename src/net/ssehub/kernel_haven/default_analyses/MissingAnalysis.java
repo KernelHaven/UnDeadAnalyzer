@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -15,7 +13,7 @@ import net.ssehub.kernel_haven.build_model.BuildModel;
 import net.ssehub.kernel_haven.code_model.Block;
 import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.Configuration;
-import net.ssehub.kernel_haven.util.ExtractorException;
+import net.ssehub.kernel_haven.util.BlockingQueue;
 import net.ssehub.kernel_haven.util.logic.Conjunction;
 import net.ssehub.kernel_haven.util.logic.Disjunction;
 import net.ssehub.kernel_haven.util.logic.Formula;
@@ -69,21 +67,15 @@ public class MissingAnalysis extends AbstractAnalysis {
         LOGGER.logInfo("Start missing analysis");
         try {
             // Start all
-            vmProvider.start(config.getVariabilityConfiguration());
-            bmProvider.start(config.getBuildConfiguration());
-            cmProvider.start(config.getCodeConfiguration());
+            vmProvider.start();
+            bmProvider.start();
+            cmProvider.start();
 
             // Set all needed Models
             VariabilityModel vm = null;
             BuildModel bm = null;
-            List<SourceFile> files = new LinkedList<>();
             vm = vmProvider.getResult();
             bm = bmProvider.getResult();
-            SourceFile file = cmProvider.getNext();
-            while (file != null) {
-                files.add(file);
-                file = cmProvider.getNext();
-            }
             
             // Analysis
             String filename = "";
@@ -92,13 +84,13 @@ public class MissingAnalysis extends AbstractAnalysis {
             switch (analyse) {
             case DEFINED_BUT_NOT_USED:
                 LOGGER.logInfo("Defined but unused analysis");
-                variables = definedButUnused(vm, bm, files);
+                variables = definedButUnused(vm, bm, cmProvider.getResultQueue());
                 filename = "definedButUnused.variables";
                 break;
                 
             case USED_BUT_NOT_DEFINED:
                 LOGGER.logInfo("Used but not defined analysis");
-                variables = usedButNotDefined(vm, bm, files);
+                variables = usedButNotDefined(vm, bm, cmProvider.getResultQueue());
                 filename = "usedButUndefined.variables";
                 break;
                 
@@ -114,7 +106,7 @@ public class MissingAnalysis extends AbstractAnalysis {
             }
             fw.close();
             
-        } catch (ExtractorException | SetUpException e) {
+        } catch (SetUpException e) {
             LOGGER.logException("Provider failed", e);
         }
         LOGGER.logInfo("Missing analysis done");
@@ -132,7 +124,7 @@ public class MissingAnalysis extends AbstractAnalysis {
      * @return variables The set of variables, flagged with true or false
      *         whether if the variable is used in the code.
      */
-    public Set<String> definedButUnused(VariabilityModel vm, BuildModel bm, List<SourceFile> files) {
+    public Set<String> definedButUnused(VariabilityModel vm, BuildModel bm, BlockingQueue<SourceFile> files) {
         // Fill a map
         Map<String, Boolean> variables = new HashMap<>();
         for (VariabilityVariable variabilityVariable : vm.getVariables()) {
@@ -178,7 +170,7 @@ public class MissingAnalysis extends AbstractAnalysis {
      * @return variables The set of variables, flagged with true or false
      *         whether if the variable is used in the code.
      */
-    public Set<String> usedButNotDefined(VariabilityModel vm, BuildModel bm, List<SourceFile> files) {
+    public Set<String> usedButNotDefined(VariabilityModel vm, BuildModel bm, BlockingQueue<SourceFile> files) {
         Map<String, Boolean> variables = new HashMap<>();
         // Fill a map with build model
         for (File file : bm) {

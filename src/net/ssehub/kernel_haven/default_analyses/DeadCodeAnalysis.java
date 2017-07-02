@@ -11,15 +11,15 @@ import net.ssehub.kernel_haven.build_model.BuildModel;
 import net.ssehub.kernel_haven.cnf.Cnf;
 import net.ssehub.kernel_haven.cnf.ConverterException;
 import net.ssehub.kernel_haven.cnf.FormulaToCnfConverterFactory;
+import net.ssehub.kernel_haven.cnf.FormulaToCnfConverterFactory.Strategy;
 import net.ssehub.kernel_haven.cnf.IFormulaToCnfConverter;
 import net.ssehub.kernel_haven.cnf.SatSolver;
 import net.ssehub.kernel_haven.cnf.SolverException;
 import net.ssehub.kernel_haven.cnf.VmToCnfConverter;
-import net.ssehub.kernel_haven.cnf.FormulaToCnfConverterFactory.Strategy;
 import net.ssehub.kernel_haven.code_model.Block;
-import net.ssehub.kernel_haven.code_model.CodeModelProvider;
 import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.Configuration;
+import net.ssehub.kernel_haven.util.BlockingQueue;
 import net.ssehub.kernel_haven.util.CodeExtractorException;
 import net.ssehub.kernel_haven.util.ExtractorException;
 import net.ssehub.kernel_haven.util.FormatException;
@@ -54,7 +54,7 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
      * 
      * @param vm The variability model.
      * @param bm The build model.
-     * @param cm The provider for the code model.
+     * @param cm The the code model.
      * @return The list of dead code blocks.
      * 
      * @throws FormatException If the {@link VariabilityModel} has an invalid constraint model file.
@@ -62,7 +62,7 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
      * @throws SolverException If the solver fails.
      * @throws ExtractorException If the code provider throws an exception.
      */
-    public List<DeadCodeBlock> findDeadCodeBlocks(VariabilityModel vm, BuildModel bm, CodeModelProvider cm)
+    public List<DeadCodeBlock> findDeadCodeBlocks(VariabilityModel vm, BuildModel bm, BlockingQueue<SourceFile> cm)
             throws FormatException, ConverterException, SolverException, ExtractorException {
         
         result = new ArrayList<>();
@@ -73,7 +73,7 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
         converter = FormulaToCnfConverterFactory.create(Strategy.RECURISVE_REPLACING);
         
         SourceFile sourceFile;
-        while ((sourceFile = cm.getNext()) != null) {
+        while ((sourceFile = cm.get()) != null) {
             
             Formula filePc = bm.getPc(sourceFile.getPath());
             
@@ -90,15 +90,6 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
                 checkBlock(block, filePc, sourceFile);
             }
         }
-        
-        CodeExtractorException exception;
-        List<String> lines = new ArrayList<>();
-        lines.add("Couldn't parse the following files:");
-        while ((exception = cm.getNextException()) != null) {
-            lines.add("* " + exception.getCausingFile().getPath() + ": " + exception.getCause().getMessage());
-        }
-        lines.set(0, "Couldn't parse the following " + (lines.size() - 1) + " files:");
-        LOGGER.logInfo(lines.toArray(new String[0]));
         
         return result;
     }
@@ -222,9 +213,9 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
         PrintStream resultStream = createResultStream("dead_blocks.csv");
         
         try {
-            vmProvider.start(config.getVariabilityConfiguration());
-            bmProvider.start(config.getBuildConfiguration());
-            cmProvider.start(config.getCodeConfiguration());
+            vmProvider.start();
+            bmProvider.start();
+            cmProvider.start();
             
         
             VariabilityModel vm = vmProvider.getResult();
@@ -232,7 +223,7 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
             
             LOGGER.logInfo("Start finding dead code blocks");
 
-            List<DeadCodeBlock> result = findDeadCodeBlocks(vm, bm, cmProvider);
+            List<DeadCodeBlock> result = findDeadCodeBlocks(vm, bm, cmProvider.getResultQueue());
 
             LOGGER.logInfo("Found " + result.size() + " dead code blocks");
             
@@ -242,6 +233,15 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
             for (DeadCodeBlock block : result) {
                 resultStream.println(block.toString());
             }
+            
+            CodeExtractorException exception;
+            List<String> lines = new ArrayList<>();
+            lines.add("Couldn't parse the following files:");
+            while ((exception = (CodeExtractorException) cmProvider.getNextException()) != null) {
+                lines.add("* " + exception.getCausingFile().getPath() + ": " + exception.getCause().getMessage());
+            }
+            lines.set(0, "Couldn't parse the following " + (lines.size() - 1) + " files:");
+            LOGGER.logInfo(lines.toArray(new String[0]));
             
         } catch (ExtractorException e) {
             LOGGER.logException("Error extracting model", e);

@@ -31,10 +31,9 @@ import net.ssehub.kernel_haven.build_model.BuildModel;
 import net.ssehub.kernel_haven.cnf.ConverterException;
 import net.ssehub.kernel_haven.cnf.SolverException;
 import net.ssehub.kernel_haven.code_model.CodeModelCacheTest;
-import net.ssehub.kernel_haven.code_model.CodeModelProvider;
 import net.ssehub.kernel_haven.code_model.SourceFile;
-import net.ssehub.kernel_haven.code_model.TestCodeModelProvider;
 import net.ssehub.kernel_haven.default_analyses.DeadCodeAnalysis.DeadCodeBlock;
+import net.ssehub.kernel_haven.util.BlockingQueue;
 import net.ssehub.kernel_haven.util.ExtractorException;
 import net.ssehub.kernel_haven.util.FormatException;
 import net.ssehub.kernel_haven.util.Logger;
@@ -56,7 +55,7 @@ public class DeadCodeAnalysisTest {
     
     private DeadCodeAnalysis analyser;
     private VariabilityModel vm;
-    private CodeModelProvider cm;
+    private BlockingQueue<SourceFile> cm;
     private SourceFile sFile1;
     private BuildModel bm;
 
@@ -95,16 +94,17 @@ public class DeadCodeAnalysisTest {
         Assert.assertNotNull("Error: VariabilityModel not initialized.", vm);
         
         // Create virtual files
-        cm = new TestCodeModelProvider();
+        cm = new BlockingQueue<>();
         File file1 = new File(TESTDATA_DIR, "file1.c");
         sFile1 = new SourceFile(file1);
-        cm.addResult(sFile1);
+        cm.add(sFile1);
+        cm.end();
         
         // Create virtual build model
         bm = new BuildModel();
         bm.add(file1, new Variable(alpha.getName()));
         
-        // Create fresh analyser instance
+        // Create fresh analysis instance
         analyser = new DeadCodeAnalysis(tConfig);
         Assert.assertNotNull("Error: DeadCodeAnalysis not initialized.", analyser);
     }
