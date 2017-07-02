@@ -8,6 +8,7 @@ import java.util.List;
 import net.ssehub.kernel_haven.SetUpException;
 import net.ssehub.kernel_haven.analysis.AbstractAnalysis;
 import net.ssehub.kernel_haven.build_model.BuildModel;
+import net.ssehub.kernel_haven.cnf.CachedSatSolver;
 import net.ssehub.kernel_haven.cnf.Cnf;
 import net.ssehub.kernel_haven.cnf.ConverterException;
 import net.ssehub.kernel_haven.cnf.FormulaToCnfConverterFactory;
@@ -68,7 +69,7 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
         result = new ArrayList<>();
         
         Cnf vmCnf = new VmToCnfConverter().convertVmToCnf(vm);
-        solver = new SatSolver(vmCnf);
+        solver = new CachedSatSolver(vmCnf);
         
         converter = FormulaToCnfConverterFactory.create(Strategy.RECURISVE_REPLACING);
         
