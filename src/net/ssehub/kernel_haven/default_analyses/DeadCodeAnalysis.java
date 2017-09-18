@@ -239,7 +239,13 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
             List<String> lines = new ArrayList<>();
             lines.add("Couldn't parse the following files:");
             while ((exception = (CodeExtractorException) cmProvider.getNextException()) != null) {
-                lines.add("* " + exception.getCausingFile().getPath() + ": " + exception.getCause().getMessage());
+                String message;
+                if (exception.getCause() != null) {
+                    message = exception.getCause().getMessage();
+                } else {
+                    message = exception.getMessage();
+                }
+                lines.add("* " + exception.getCausingFile().getPath() + ": " + message);
             }
             lines.set(0, "Couldn't parse the following " + (lines.size() - 1) + " files:");
             LOGGER.logInfo(lines.toArray(new String[0]));
