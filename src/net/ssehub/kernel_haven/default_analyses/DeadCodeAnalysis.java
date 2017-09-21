@@ -3,12 +3,13 @@ package net.ssehub.kernel_haven.default_analyses;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import net.ssehub.kernel_haven.SetUpException;
 import net.ssehub.kernel_haven.analysis.AbstractAnalysis;
 import net.ssehub.kernel_haven.build_model.BuildModel;
-import net.ssehub.kernel_haven.cnf.CachedSatSolver;
 import net.ssehub.kernel_haven.cnf.Cnf;
 import net.ssehub.kernel_haven.cnf.ConverterException;
 import net.ssehub.kernel_haven.cnf.FormulaToCnfConverterFactory;
@@ -41,6 +42,8 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
     
     private List<DeadCodeBlock> result;
     
+    private Map<Formula, Boolean> satCache;
+    
     /**
      * Creates a dead code analysis.
      *  
@@ -48,6 +51,7 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
      */
     public DeadCodeAnalysis(Configuration config) {
         super(config);
+        satCache = new HashMap<>(10000);
     }
     
     /**
@@ -69,12 +73,13 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
         result = new ArrayList<>();
         
         Cnf vmCnf = new VmToCnfConverter().convertVmToCnf(vm);
-        solver = new CachedSatSolver(vmCnf);
+        solver = new SatSolver(vmCnf);
         
         converter = FormulaToCnfConverterFactory.create(Strategy.RECURISVE_REPLACING);
         
         SourceFile sourceFile;
         while ((sourceFile = cm.get()) != null) {
+            satCache.clear(); // clear after each source file, so that it doesn't get too big
             
             Formula filePc = bm.getPc(sourceFile.getPath());
             
@@ -96,6 +101,36 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
     }
     
     /**
+     * Checks whether the given formula is satisfiable with the variability model. Internally, this method has a cache
+     * to speed up when the same formula is passed to it several times.
+     * 
+     * @param pc The formula to check.
+     * @return Whether the formula is satisfiable with the variability model.
+     * 
+     * @throws ConverterException If the conversion to CNF fails.
+     * @throws SolverException If the SAT-solver fails.
+     */
+    private boolean isSat(Formula pc) throws ConverterException, SolverException {
+        Boolean sat = satCache.get(pc);
+        
+        if (sat == null) {
+            Cnf pcCnf = converter.convert(pc);
+            
+            String[] cnfLines = pcCnf.toString().split("\n");
+            String[] output = new String[cnfLines.length + 1];
+            System.arraycopy(cnfLines, 0, output, 1, cnfLines.length);
+            output[0] = "PcCnf: ";
+            LOGGER.logDebug(output);
+            
+            sat = solver.isSatisfiable(pcCnf);
+            satCache.put(pc, sat);
+            LOGGER.logDebug("sat(" + pc + ") = " + sat);
+        }
+
+        return sat;
+    }
+    
+    /**
      * Checks if a given block is dead. Recursively walks over each child block, too.
      * 
      * @param block The block to check.
@@ -110,21 +145,7 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
         
         Formula pc = new Conjunction(block.getPresenceCondition(), filePc);
 
-        LOGGER.logDebug("PC: " + pc);
-        
-        Cnf pcCnf = converter.convert(pc);
-        
-        String[] cnfLines = pcCnf.toString().split("\n");
-        String[] output = new String[cnfLines.length + 1];
-        System.arraycopy(cnfLines, 0, output, 1, cnfLines.length);
-        output[0] = "PcCnf: ";
-        LOGGER.logDebug(output);
-        
-        boolean sat = solver.isSatisfiable(pcCnf);
-        
-        LOGGER.logDebug("sat: " + sat);
-        
-        if (!sat) {
+        if (!isSat(pc)) {
             DeadCodeBlock deadBlock = new DeadCodeBlock(sourceFile.getPath(), block, filePc);
             LOGGER.logInfo("Found dead block: " + deadBlock);
             result.add(deadBlock);
