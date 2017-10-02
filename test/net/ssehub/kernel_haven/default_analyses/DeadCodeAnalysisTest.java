@@ -30,7 +30,7 @@ import net.ssehub.kernel_haven.TestConfiguration;
 import net.ssehub.kernel_haven.build_model.BuildModel;
 import net.ssehub.kernel_haven.cnf.ConverterException;
 import net.ssehub.kernel_haven.cnf.SolverException;
-import net.ssehub.kernel_haven.code_model.CodeModelCacheTest;
+import net.ssehub.kernel_haven.code_model.CodeBlock;
 import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.default_analyses.DeadCodeAnalysis.DeadCodeBlock;
 import net.ssehub.kernel_haven.util.BlockingQueue;
@@ -133,7 +133,7 @@ public class DeadCodeAnalysisTest {
      */
     @Test
     public void testDeadBlock() throws FormatException, ConverterException, SolverException, ExtractorException {
-        sFile1.addBlock(new CodeModelCacheTest.PseudoBlock(12, 15,
+        sFile1.addElement(new CodeBlock(12, 15, new File("file"),
                 new Negation(new Variable("BETA")), new Negation(new Variable("BETA"))));
         List<DeadCodeBlock> deadBlocks = analyser.findDeadCodeBlocks(vm, bm, cm);
         Assert.assertFalse(deadBlocks.isEmpty());

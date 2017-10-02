@@ -10,7 +10,7 @@ import java.util.Set;
 import net.ssehub.kernel_haven.SetUpException;
 import net.ssehub.kernel_haven.analysis.AbstractAnalysis;
 import net.ssehub.kernel_haven.build_model.BuildModel;
-import net.ssehub.kernel_haven.code_model.Block;
+import net.ssehub.kernel_haven.code_model.CodeElement;
 import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.Configuration;
 import net.ssehub.kernel_haven.util.BlockingQueue;
@@ -140,7 +140,7 @@ public class MissingAnalysis extends AbstractAnalysis {
         }
         // Check in code model
         for (SourceFile file : files) {
-            for (Block block : file) {
+            for (CodeElement block : file) {
                 Set<String> names = new HashSet<>();
                 getVariableNamesInBlock(block, names);
                 
@@ -182,7 +182,7 @@ public class MissingAnalysis extends AbstractAnalysis {
         }
         // Fill same map with code model
         for (SourceFile file : files) {
-            for (Block block : file) {
+            for (CodeElement block : file) {
                 Set<String> names = new HashSet<>();
                 getVariableNamesInBlock(block, names);
                 for (String var : names) {
@@ -214,10 +214,10 @@ public class MissingAnalysis extends AbstractAnalysis {
      * @param block The block to search in.
      * @param result The resulting set of variable names
      */
-    private void getVariableNamesInBlock(Block block, Set<String> result) {
+    private void getVariableNamesInBlock(CodeElement block, Set<String> result) {
         getVariableNamesInFormula(result, block.getPresenceCondition());
         
-        for (Block child : block) {
+        for (CodeElement child : block.iterateNestedElements()) {
             getVariableNamesInBlock(child, result);
         }
     }

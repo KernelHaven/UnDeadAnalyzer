@@ -18,7 +18,7 @@ import net.ssehub.kernel_haven.cnf.IFormulaToCnfConverter;
 import net.ssehub.kernel_haven.cnf.SatSolver;
 import net.ssehub.kernel_haven.cnf.SolverException;
 import net.ssehub.kernel_haven.cnf.VmToCnfConverter;
-import net.ssehub.kernel_haven.code_model.Block;
+import net.ssehub.kernel_haven.code_model.CodeElement;
 import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.Configuration;
 import net.ssehub.kernel_haven.util.BlockingQueue;
@@ -92,7 +92,7 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
             LOGGER.logDebug("File PC: " + filePc);
             
             
-            for (Block block : sourceFile) {
+            for (CodeElement block : sourceFile) {
                 checkBlock(block, filePc, sourceFile);
             }
         }
@@ -140,7 +140,7 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
      * @throws ConverterException If converting the formula to CNF fails.
      * @throws SolverException If solving the CNF fails.
      */
-    private void checkBlock(Block block, Formula filePc, SourceFile sourceFile)
+    private void checkBlock(CodeElement block, Formula filePc, SourceFile sourceFile)
             throws ConverterException, SolverException {
         
         Formula pc = new Conjunction(block.getPresenceCondition(), filePc);
@@ -151,7 +151,7 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
             result.add(deadBlock);
         }
         
-        for (Block child : block) {
+        for (CodeElement child : block.iterateNestedElements()) {
             checkBlock(child, filePc, sourceFile);
         }
     }
@@ -184,13 +184,13 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
         }
         
         /**
-         * Converts a {@link Block} into a {@link DeadCodeBlock}.
+         * Converts a {@link CodeElement} into a {@link DeadCodeBlock}.
          * This constructor stores more information.
          * @param sourceFile sourceFile The source file.
          * @param deadBlock A Block which was identified to be a dead code block.
          * @param filePc The presence condition for the complete file, maybe <tt>null</tt>
          */
-        public DeadCodeBlock(File sourceFile, Block deadBlock, Formula filePc) {
+        public DeadCodeBlock(File sourceFile, CodeElement deadBlock, Formula filePc) {
             this(sourceFile, deadBlock.getLineStart());
             this.endLinie = deadBlock.getLineEnd();
             this.presenceCondition = deadBlock.getPresenceCondition();
