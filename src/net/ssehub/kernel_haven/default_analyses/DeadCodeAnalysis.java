@@ -92,8 +92,8 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
             LOGGER.logDebug("File PC: " + filePc);
             
             
-            for (CodeElement block : sourceFile) {
-                checkBlock(block, filePc, sourceFile);
+            for (CodeElement element : sourceFile) {
+                checkElement(element, filePc, sourceFile);
             }
         }
         
@@ -131,28 +131,28 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
     }
     
     /**
-     * Checks if a given block is dead. Recursively walks over each child block, too.
+     * Checks if a given element is dead. Recursively walks over each child element, too.
      * 
-     * @param block The block to check.
+     * @param element The element to check.
      * @param filePc The presence condition of the file.
      * @param sourceFile The source file; used for creating the result.
      * 
      * @throws ConverterException If converting the formula to CNF fails.
      * @throws SolverException If solving the CNF fails.
      */
-    private void checkBlock(CodeElement block, Formula filePc, SourceFile sourceFile)
+    private void checkElement(CodeElement element, Formula filePc, SourceFile sourceFile)
             throws ConverterException, SolverException {
         
-        Formula pc = new Conjunction(block.getPresenceCondition(), filePc);
+        Formula pc = new Conjunction(element.getPresenceCondition(), filePc);
 
         if (!isSat(pc)) {
-            DeadCodeBlock deadBlock = new DeadCodeBlock(sourceFile.getPath(), block, filePc);
+            DeadCodeBlock deadBlock = new DeadCodeBlock(element, filePc);
             LOGGER.logInfo("Found dead block: " + deadBlock);
             result.add(deadBlock);
         }
         
-        for (CodeElement child : block.iterateNestedElements()) {
-            checkBlock(child, filePc, sourceFile);
+        for (CodeElement child : element.iterateNestedElements()) {
+            checkElement(child, filePc, sourceFile);
         }
     }
 
@@ -173,7 +173,7 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
         /**
          * Creates a dead code block.
          * @param sourceFile The source file.
-         * @param line The line of the block.
+         * @param line The line of the element.
          */
         public DeadCodeBlock(File sourceFile, int line) {
             this.sourceFile = sourceFile;
@@ -186,14 +186,14 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
         /**
          * Converts a {@link CodeElement} into a {@link DeadCodeBlock}.
          * This constructor stores more information.
-         * @param sourceFile sourceFile The source file.
-         * @param deadBlock A Block which was identified to be a dead code block.
+         * 
+         * @param deadElement An element which was identified to be dead.
          * @param filePc The presence condition for the complete file, maybe <tt>null</tt>
          */
-        public DeadCodeBlock(File sourceFile, CodeElement deadBlock, Formula filePc) {
-            this(sourceFile, deadBlock.getLineStart());
-            this.endLinie = deadBlock.getLineEnd();
-            this.presenceCondition = deadBlock.getPresenceCondition();
+        public DeadCodeBlock(CodeElement deadElement, Formula filePc) {
+            this(deadElement.getSourceFile(), deadElement.getLineStart());
+            this.endLinie = deadElement.getLineEnd();
+            this.presenceCondition = deadElement.getPresenceCondition();
             this.filePc = filePc;
         }
         

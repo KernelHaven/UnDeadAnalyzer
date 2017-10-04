@@ -110,7 +110,7 @@ public class DeadCodeAnalysisTest {
     }
 
     /**
-     * Tests a file, which has no dead blocks.
+     * Tests a file, which has no dead elements.
      * 
      * @throws FormatException unwanted.
      * @throws ConverterException unwanted.
@@ -118,13 +118,13 @@ public class DeadCodeAnalysisTest {
      * @throws ExtractorException unwanted.
      */
     @Test
-    public void testNoDeadBlock() throws FormatException, ConverterException, SolverException, ExtractorException {
+    public void testNoDeadElements() throws FormatException, ConverterException, SolverException, ExtractorException {
         List<DeadCodeBlock> deadBlocks = analyser.findDeadCodeBlocks(vm, bm, cm);
         Assert.assertTrue(deadBlocks.isEmpty());
     }
     
     /**
-     * Tests a file, which has a dead code block.
+     * Tests a file, which has a dead code element.
      * 
      * @throws FormatException unwanted.
      * @throws ConverterException unwanted.
@@ -132,7 +132,7 @@ public class DeadCodeAnalysisTest {
      * @throws ExtractorException unwanted.
      */
     @Test
-    public void testDeadBlock() throws FormatException, ConverterException, SolverException, ExtractorException {
+    public void testDeadElement() throws FormatException, ConverterException, SolverException, ExtractorException {
         sFile1.addElement(new CodeBlock(12, 15, new File("file"),
                 new Negation(new Variable("BETA")), new Negation(new Variable("BETA"))));
         List<DeadCodeBlock> deadBlocks = analyser.findDeadCodeBlocks(vm, bm, cm);

@@ -140,9 +140,9 @@ public class MissingAnalysis extends AbstractAnalysis {
         }
         // Check in code model
         for (SourceFile file : files) {
-            for (CodeElement block : file) {
+            for (CodeElement element : file) {
                 Set<String> names = new HashSet<>();
-                getVariableNamesInBlock(block, names);
+                getVariableNamesInElement(element, names);
                 
                 for (String var : names) {
                     variables.put(var, true);
@@ -182,9 +182,9 @@ public class MissingAnalysis extends AbstractAnalysis {
         }
         // Fill same map with code model
         for (SourceFile file : files) {
-            for (CodeElement block : file) {
+            for (CodeElement element : file) {
                 Set<String> names = new HashSet<>();
-                getVariableNamesInBlock(block, names);
+                getVariableNamesInElement(element, names);
                 for (String var : names) {
                     variables.put(var, false);
                 }
@@ -209,16 +209,16 @@ public class MissingAnalysis extends AbstractAnalysis {
 
     /**
      * Recursively finds all variable names that start with CONFIG_
-     * in the presence conditions of a block and all child blocks.
+     * in the presence conditions of an element and all child elements.
      *  
-     * @param block The block to search in.
+     * @param element The element to search in.
      * @param result The resulting set of variable names
      */
-    private void getVariableNamesInBlock(CodeElement block, Set<String> result) {
-        getVariableNamesInFormula(result, block.getPresenceCondition());
+    private void getVariableNamesInElement(CodeElement element, Set<String> result) {
+        getVariableNamesInFormula(result, element.getPresenceCondition());
         
-        for (CodeElement child : block.iterateNestedElements()) {
-            getVariableNamesInBlock(child, result);
+        for (CodeElement child : element.iterateNestedElements()) {
+            getVariableNamesInElement(child, result);
         }
     }
 
