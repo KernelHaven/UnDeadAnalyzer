@@ -1,14 +1,12 @@
 package net.ssehub.kernel_haven.default_analyses;
 
 import java.io.File;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.ssehub.kernel_haven.SetUpException;
-import net.ssehub.kernel_haven.analysis.AbstractAnalysis;
+import net.ssehub.kernel_haven.analysis.AnalysisComponent;
 import net.ssehub.kernel_haven.build_model.BuildModel;
 import net.ssehub.kernel_haven.cnf.Cnf;
 import net.ssehub.kernel_haven.cnf.ConverterException;
@@ -21,9 +19,7 @@ import net.ssehub.kernel_haven.cnf.VmToCnfConverter;
 import net.ssehub.kernel_haven.code_model.CodeElement;
 import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.Configuration;
-import net.ssehub.kernel_haven.util.BlockingQueue;
-import net.ssehub.kernel_haven.util.CodeExtractorException;
-import net.ssehub.kernel_haven.util.ExtractorException;
+import net.ssehub.kernel_haven.default_analyses.DeadCodeFinder.DeadCodeBlock;
 import net.ssehub.kernel_haven.util.FormatException;
 import net.ssehub.kernel_haven.util.logic.Conjunction;
 import net.ssehub.kernel_haven.util.logic.Formula;
@@ -34,8 +30,14 @@ import net.ssehub.kernel_haven.variability_model.VariabilityModel;
  * 
  * @author Adam
  */
-public class DeadCodeAnalysis extends AbstractAnalysis {
-
+public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
+    
+    private AnalysisComponent<VariabilityModel > vmComponent;
+    
+    private AnalysisComponent<BuildModel > bmComponent;
+    
+    private AnalysisComponent<SourceFile > cmComponent;
+    
     private SatSolver solver;
     
     private IFormulaToCnfConverter converter;
@@ -48,27 +50,31 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
      * Creates a dead code analysis.
      *  
      * @param config The user configuration; not used.
+     * @param vmComponent The component to provide the variability model.
+     * @param bmComponent The component to provide the build model.
+     * @param cmComponent The component to provide the code model.
      */
-    public DeadCodeAnalysis(Configuration config) {
+    public DeadCodeFinder(Configuration config, AnalysisComponent<VariabilityModel> vmComponent,
+            AnalysisComponent<BuildModel> bmComponent, AnalysisComponent<SourceFile> cmComponent) {
         super(config);
         satCache = new HashMap<>(10000);
+        this.vmComponent = vmComponent;
+        this.bmComponent = bmComponent;
+        this.cmComponent = cmComponent;
     }
     
     /**
-     * Finds dead code blocks.
+     * Finds dead code blocks. Package visibility for test cases.
      * 
      * @param vm The variability model.
      * @param bm The build model.
-     * @param cm The the code model.
+     * @param sourceFile The source file to serach in.
      * @return The list of dead code blocks.
      * 
      * @throws FormatException If the {@link VariabilityModel} has an invalid constraint model file.
-     * @throws ConverterException If converting PCs to CNF fails.
-     * @throws SolverException If the solver fails.
-     * @throws ExtractorException If the code provider throws an exception.
      */
-    public List<DeadCodeBlock> findDeadCodeBlocks(VariabilityModel vm, BuildModel bm, BlockingQueue<SourceFile> cm)
-            throws FormatException, ConverterException, SolverException, ExtractorException {
+    private List<DeadCodeBlock> findDeadCodeBlocks(VariabilityModel vm, BuildModel bm, SourceFile sourceFile)
+            throws FormatException {
         
         result = new ArrayList<>();
         
@@ -77,25 +83,26 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
         
         converter = FormulaToCnfConverterFactory.create(Strategy.RECURISVE_REPLACING);
         
-        SourceFile sourceFile;
-        while ((sourceFile = cm.get()) != null) {
-            satCache.clear(); // clear after each source file, so that it doesn't get too big
-            
-            Formula filePc = bm.getPc(sourceFile.getPath());
-            
-            if (filePc == null) {
-                LOGGER.logInfo("Skipping " + sourceFile.getPath() + " because it has no build PC");
-                continue;
-            }
-            
+        satCache.clear(); // clear after each source file, so that it doesn't get too big
+        
+        Formula filePc = bm.getPc(sourceFile.getPath());
+        
+        if (filePc == null) {
+            LOGGER.logInfo("Skipping " + sourceFile.getPath() + " because it has no build PC");
+        } else {
             LOGGER.logInfo("Running for file " + sourceFile.getPath());
             LOGGER.logDebug("File PC: " + filePc);
             
             
             for (CodeElement element : sourceFile) {
-                checkElement(element, filePc, sourceFile);
+                try {
+                    checkElement(element, filePc, sourceFile);
+                } catch (SolverException | ConverterException e) {
+                    LOGGER.logException("Exception while trying to check element", e);
+                }
             }
         }
+        
         
         return result;
     }
@@ -229,61 +236,25 @@ public class DeadCodeAnalysis extends AbstractAnalysis {
         }
         
     }
-    
+
     @Override
-    public void run() {
-        PrintStream resultStream = createResultStream("dead_blocks.csv");
+    protected void execute() {
+        VariabilityModel vm = vmComponent.getNextResult();
+        BuildModel bm = bmComponent.getNextResult();
         
         try {
-            vmProvider.start();
-            bmProvider.start();
-            cmProvider.start();
             
-        
-            VariabilityModel vm = vmProvider.getResult();
-            BuildModel bm = bmProvider.getResult();
-            
-            LOGGER.logInfo("Start finding dead code blocks");
-
-            List<DeadCodeBlock> result = findDeadCodeBlocks(vm, bm, cmProvider.getResultQueue());
-
-            LOGGER.logInfo("Found " + result.size() + " dead code blocks");
-            
-            // Create header
-            resultStream.println("File;Presence Condition of File;Start Line;End Line;Presence Condition of Block");
-            
-            for (DeadCodeBlock block : result) {
-                resultStream.println(block.toString());
-            }
-            
-            CodeExtractorException exception;
-            List<String> lines = new ArrayList<>();
-            lines.add("Couldn't parse the following files:");
-            while ((exception = (CodeExtractorException) cmProvider.getNextException()) != null) {
-                String message;
-                if (exception.getCause() != null) {
-                    message = exception.getCause().getMessage();
-                } else {
-                    message = exception.getMessage();
+            SourceFile file;
+            while ((file = cmComponent.getNextResult()) != null) {
+                List<DeadCodeBlock> deadBlocks = findDeadCodeBlocks(vm, bm, file);
+                for (DeadCodeBlock block : deadBlocks) {
+                    addResult(block);
                 }
-                lines.add("* " + exception.getCausingFile().getPath() + ": " + message);
             }
-            lines.set(0, "Couldn't parse the following " + (lines.size() - 1) + " files:");
-            LOGGER.logInfo(lines.toArray(new String[0]));
             
-        } catch (ExtractorException e) {
-            LOGGER.logException("Error extracting model", e);
         } catch (FormatException e) {
-            LOGGER.logException("Error converting the variability model to CNF", e);
-        } catch (SolverException e) {
-            LOGGER.logException("Error solving variability model", e);
-        } catch (ConverterException e) {
-            LOGGER.logException("Error converting to CNF", e);
-        } catch (SetUpException e) {
-            LOGGER.logException("Error in Setup", e);
+            LOGGER.logException("Invalid variability model", e);
         }
-        
-        resultStream.close();
     }
     
 }

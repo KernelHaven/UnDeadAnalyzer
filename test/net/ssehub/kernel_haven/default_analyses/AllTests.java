@@ -11,7 +11,7 @@ import org.junit.runners.Suite.SuiteClasses;
  */
 @RunWith(Suite.class)
 @SuiteClasses({
-    DeadCodeAnalysisTest.class,
+    DeadCodeFinderTest.class,
     })
 public class AllTests {
     // runs tests defined in SuiteClasses

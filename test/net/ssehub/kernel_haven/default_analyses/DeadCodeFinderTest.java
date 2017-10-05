@@ -15,27 +15,27 @@
  */
 package net.ssehub.kernel_haven.default_analyses;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
+
 import java.io.File;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import net.ssehub.kernel_haven.SetUpException;
 import net.ssehub.kernel_haven.TestConfiguration;
+import net.ssehub.kernel_haven.analysis.AnalysisComponent;
 import net.ssehub.kernel_haven.build_model.BuildModel;
-import net.ssehub.kernel_haven.cnf.ConverterException;
-import net.ssehub.kernel_haven.cnf.SolverException;
 import net.ssehub.kernel_haven.code_model.CodeBlock;
+import net.ssehub.kernel_haven.code_model.CodeElement;
 import net.ssehub.kernel_haven.code_model.SourceFile;
-import net.ssehub.kernel_haven.default_analyses.DeadCodeAnalysis.DeadCodeBlock;
-import net.ssehub.kernel_haven.util.BlockingQueue;
-import net.ssehub.kernel_haven.util.ExtractorException;
-import net.ssehub.kernel_haven.util.FormatException;
+import net.ssehub.kernel_haven.default_analyses.DeadCodeFinder.DeadCodeBlock;
+import net.ssehub.kernel_haven.test_utils.TestAnalysisComponentProvider;
 import net.ssehub.kernel_haven.util.Logger;
 import net.ssehub.kernel_haven.util.logic.Negation;
 import net.ssehub.kernel_haven.util.logic.Variable;
@@ -43,24 +43,18 @@ import net.ssehub.kernel_haven.variability_model.VariabilityModel;
 import net.ssehub.kernel_haven.variability_model.VariabilityVariable;
 
 /**
- * Tests for {@link DeadCodeAnalysis}.
+ * Tests for {@link DeadCodeFinder}.
  * 
  * @author El-Sharkawy
  *
  */
-public class DeadCodeAnalysisTest {
+public class DeadCodeFinderTest {
 
     private static final File TESTDATA_DIR = new File(AllTests.TESTDATA_DIR, "deadCodeAnalysis");
     private static final File VM_FILE = new File(TESTDATA_DIR, "varModel.cnf");
     
-    private DeadCodeAnalysis analyser;
-    private VariabilityModel vm;
-    private BlockingQueue<SourceFile> cm;
-    private SourceFile sFile1;
-    private BuildModel bm;
-
     /**
-     * Pre-condition for all tests in this test class: Initializes a new {@link DeadCodeAnalysis} and its resources.
+     * Initializes a new {@link DeadCodeFinder} and its resources.
      * Variability Model:
      * <pre><code>
      * NOT(ALPHA) OR BETA
@@ -70,9 +64,13 @@ public class DeadCodeAnalysisTest {
      * <pre><code>
      * file1.c -> ALPHA
      * </code></pre>
+     * 
+     * @param element The code element to add to the source file.
+     * @return The created DeadCodeAnalysis.
+     * 
+     * @throws SetUpException unwanted.
      */
-    @Before
-    public void setUp() {
+    public DeadCodeFinder createComponent(CodeElement element) throws SetUpException {
         // Generate configuration
         TestConfiguration tConfig = null;
         Properties config = new Properties();
@@ -90,54 +88,56 @@ public class DeadCodeAnalysisTest {
         variables.add(alpha);
         variables.add(new VariabilityVariable("BETA", "bool", 2));
         variables.add(new VariabilityVariable("GAMMA", "bool", 3));
-        vm = new VariabilityModel(VM_FILE, variables);
+        VariabilityModel vm = new VariabilityModel(VM_FILE, variables);
         Assert.assertNotNull("Error: VariabilityModel not initialized.", vm);
+        AnalysisComponent<VariabilityModel> vmComponent = new TestAnalysisComponentProvider<>(vm);
         
         // Create virtual files
-        cm = new BlockingQueue<>();
         File file1 = new File(TESTDATA_DIR, "file1.c");
-        sFile1 = new SourceFile(file1);
-        cm.add(sFile1);
-        cm.end();
+        SourceFile sourceFile1 = new SourceFile(file1);
+        if (element != null) {
+            sourceFile1.addElement(element);
+        }
+        AnalysisComponent<SourceFile> cmComponent = new TestAnalysisComponentProvider<>(sourceFile1);
         
         // Create virtual build model
-        bm = new BuildModel();
+        BuildModel bm = new BuildModel();
         bm.add(file1, new Variable(alpha.getName()));
+        AnalysisComponent<BuildModel> bmComponent = new TestAnalysisComponentProvider<>(bm);
+        
         
         // Create fresh analysis instance
-        analyser = new DeadCodeAnalysis(tConfig);
+        DeadCodeFinder analyser = new DeadCodeFinder(tConfig, vmComponent, bmComponent, cmComponent);
         Assert.assertNotNull("Error: DeadCodeAnalysis not initialized.", analyser);
+        
+        return analyser;
     }
 
     /**
      * Tests a file, which has no dead elements.
      * 
-     * @throws FormatException unwanted.
-     * @throws ConverterException unwanted.
-     * @throws SolverException unwanted.
-     * @throws ExtractorException unwanted.
+     * @throws SetUpException unwanted.
      */
     @Test
-    public void testNoDeadElements() throws FormatException, ConverterException, SolverException, ExtractorException {
-        List<DeadCodeBlock> deadBlocks = analyser.findDeadCodeBlocks(vm, bm, cm);
-        Assert.assertTrue(deadBlocks.isEmpty());
+    public void testNoDeadElements() throws  SetUpException {
+        assertThat(createComponent(null).getNextResult(), nullValue());
     }
     
     /**
      * Tests a file, which has a dead code element.
      * 
-     * @throws FormatException unwanted.
-     * @throws ConverterException unwanted.
-     * @throws SolverException unwanted.
-     * @throws ExtractorException unwanted.
+     * @throws SetUpException unwanted.
      */
     @Test
-    public void testDeadElement() throws FormatException, ConverterException, SolverException, ExtractorException {
-        sFile1.addElement(new CodeBlock(12, 15, new File("file"),
+    public void testDeadElement() throws SetUpException {
+        DeadCodeFinder analyser = createComponent(new CodeBlock(12, 15, new File("file"),
                 new Negation(new Variable("BETA")), new Negation(new Variable("BETA"))));
-        List<DeadCodeBlock> deadBlocks = analyser.findDeadCodeBlocks(vm, bm, cm);
-        Assert.assertFalse(deadBlocks.isEmpty());
-        Assert.assertEquals(1, deadBlocks.size());
-        System.out.println(deadBlocks.get(0).toString());
+        
+        DeadCodeBlock block = analyser.getNextResult();
+        assertThat(block, notNullValue());
+        System.out.println(block.toString());
+
+        assertThat(analyser.getNextResult(), nullValue());
+        
     }
 }
