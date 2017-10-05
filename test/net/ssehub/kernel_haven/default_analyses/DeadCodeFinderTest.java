@@ -90,7 +90,7 @@ public class DeadCodeFinderTest {
         variables.add(new VariabilityVariable("GAMMA", "bool", 3));
         VariabilityModel vm = new VariabilityModel(VM_FILE, variables);
         Assert.assertNotNull("Error: VariabilityModel not initialized.", vm);
-        AnalysisComponent<VariabilityModel> vmComponent = new TestAnalysisComponentProvider<>(vm);
+        AnalysisComponent<VariabilityModel> vmComponent = new TestAnalysisComponentProvider<VariabilityModel>(vm);
         
         // Create virtual files
         File file1 = new File(TESTDATA_DIR, "file1.c");
@@ -98,12 +98,12 @@ public class DeadCodeFinderTest {
         if (element != null) {
             sourceFile1.addElement(element);
         }
-        AnalysisComponent<SourceFile> cmComponent = new TestAnalysisComponentProvider<>(sourceFile1);
+        AnalysisComponent<SourceFile> cmComponent = new TestAnalysisComponentProvider<SourceFile>(sourceFile1);
         
         // Create virtual build model
         BuildModel bm = new BuildModel();
         bm.add(file1, new Variable(alpha.getName()));
-        AnalysisComponent<BuildModel> bmComponent = new TestAnalysisComponentProvider<>(bm);
+        AnalysisComponent<BuildModel> bmComponent = new TestAnalysisComponentProvider<BuildModel>(bm);
         
         
         // Create fresh analysis instance
