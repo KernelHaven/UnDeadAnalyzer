@@ -21,6 +21,8 @@ import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.Configuration;
 import net.ssehub.kernel_haven.default_analyses.DeadCodeFinder.DeadCodeBlock;
 import net.ssehub.kernel_haven.util.FormatException;
+import net.ssehub.kernel_haven.util.io.TableElement;
+import net.ssehub.kernel_haven.util.io.TableRow;
 import net.ssehub.kernel_haven.util.logic.Conjunction;
 import net.ssehub.kernel_haven.util.logic.Formula;
 import net.ssehub.kernel_haven.variability_model.VariabilityModel;
@@ -166,16 +168,23 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
     /**
      * A dead code block.
      */
+    @TableRow
     public static class DeadCodeBlock {
         
+        @TableElement(name = "Source File", index = 0)
         private File sourceFile;
         
+        @TableElement(name = "File PC", index = 1)
+        private Formula filePc;
+        
+        @TableElement(name = "Line Start", index = 2)
         private int startLine;
 
+        @TableElement(name = "Line End", index = 3)
         private int endLinie;
         
+        @TableElement(name = "Presence Condition", index = 4)
         private Formula presenceCondition;
-        private Formula filePc;
         
         /**
          * Creates a dead code block.
