@@ -171,19 +171,14 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
     @TableRow
     public static class DeadCodeBlock {
         
-        @TableElement(name = "Source File", index = 0)
         private File sourceFile;
         
-        @TableElement(name = "File PC", index = 1)
         private Formula filePc;
         
-        @TableElement(name = "Line Start", index = 2)
         private int startLine;
 
-        @TableElement(name = "Line End", index = 3)
-        private int endLinie;
+        private int endLine;
         
-        @TableElement(name = "Presence Condition", index = 4)
         private Formula presenceCondition;
         
         /**
@@ -194,7 +189,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         public DeadCodeBlock(File sourceFile, int line) {
             this.sourceFile = sourceFile;
             this.startLine = line;
-            this.endLinie = 0;
+            this.endLine = 0;
             this.presenceCondition = null;
             this.filePc = null;
         }
@@ -208,17 +203,62 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
          */
         public DeadCodeBlock(CodeElement deadElement, Formula filePc) {
             this(deadElement.getSourceFile(), deadElement.getLineStart());
-            this.endLinie = deadElement.getLineEnd();
+            this.endLine = deadElement.getLineEnd();
             this.presenceCondition = deadElement.getPresenceCondition();
             this.filePc = filePc;
         }
+
+        /**
+         * Returns the source file that this block is in.
+         * 
+         * @return The source file.
+         */
+        @TableElement(name = "Source File", index = 0)
+        public File getSourceFile() {
+            return sourceFile;
+        }
         
         /**
-         * Converts this block to a CSV line using the specified separator.
-         * @param separator Specification how to separate lines, if unsure use &#59;
-         * @return This block in CSV representation.
+         * Returns the presence condition (PC) of the file.
+         * 
+         * @return The PC of the file. May be <code>null</code>.
          */
-        private String toCSVLine(String separator) {
+        @TableElement(name = "File PC", index = 1)
+        public Formula getFilePc() {
+            return filePc;
+        }
+        
+        /**
+         * The starting line of this block.
+         * @return The staring line.
+         */
+        @TableElement(name = "Line Start", index = 2)
+        public int getStartLine() {
+            return startLine;
+        }
+        
+        /**
+         * The end line of this block.
+         * @return The end line.
+         */
+        @TableElement(name = "Line End", index = 3)
+        public int getEndLine() {
+            return endLine;
+        }
+        
+        /**
+         * Returns the presence condition (PC) of this block.
+         * 
+         * @return The PC.
+         */
+        @TableElement(name = "Presence Condition", index = 4)
+        public Formula getPresenceCondition() {
+            return presenceCondition;
+        }
+        
+        @Override
+        public String toString() {
+            char separator = ' ';
             StringBuffer result = new StringBuffer();
             result.append(sourceFile.getPath());
             result.append(separator);
@@ -228,8 +268,8 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
             result.append(separator);
             result.append(startLine);
             result.append(separator);
-            if (0 != endLinie) {
-                result.append(endLinie);
+            if (0 != endLine) {
+                result.append(endLine);
             }
             result.append(separator);
             if (null != presenceCondition) {
@@ -237,11 +277,6 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
             }            
             
             return result.toString();
-        }
-        
-        @Override
-        public String toString() {
-            return toCSVLine(";");
         }
         
     }
