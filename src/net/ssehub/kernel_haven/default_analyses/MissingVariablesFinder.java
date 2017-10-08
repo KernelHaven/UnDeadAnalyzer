@@ -14,6 +14,8 @@ import net.ssehub.kernel_haven.build_model.BuildModel;
 import net.ssehub.kernel_haven.code_model.CodeElement;
 import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.Configuration;
+import net.ssehub.kernel_haven.config.EnumSetting;
+import net.ssehub.kernel_haven.config.Setting;
 import net.ssehub.kernel_haven.util.logic.Conjunction;
 import net.ssehub.kernel_haven.util.logic.Disjunction;
 import net.ssehub.kernel_haven.util.logic.Formula;
@@ -32,6 +34,9 @@ import net.ssehub.kernel_haven.variability_model.VariabilityVariable;
  */
 public class MissingVariablesFinder extends AnalysisComponent<String> {
 
+    private static final Setting<Analysis> MISSING_TYPE =
+            new EnumSetting<>("analysis.missing.type", Analysis.class, true, Analysis.DEFINED_BUT_NOT_USED, "TODO");
+    
     private AnalysisComponent<VariabilityModel> vmComponent;
 
     private AnalysisComponent<BuildModel> bmComponent;
@@ -66,16 +71,9 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
             AnalysisComponent<BuildModel> bmComponent, AnalysisComponent<SourceFile> cmComponent)
             throws SetUpException {
         super(config);
-
-        String type = config.getProperty("analysis.missing.type", "D");
-        if (type.equalsIgnoreCase("D")) {
-            analyse = Analysis.DEFINED_BUT_NOT_USED;
-        } else if (type.equalsIgnoreCase("U")) {
-            analyse = Analysis.USED_BUT_NOT_DEFINED;
-        } else {
-            throw new SetUpException("analysis.missing.type is wrong: " + type);
-        }
-
+        
+        config.registerSetting(MISSING_TYPE);
+        analyse = config.getValue(MISSING_TYPE);
     }
 
     @Override
