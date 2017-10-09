@@ -1,4 +1,4 @@
-package net.ssehub.kernel_haven.default_analyses;
+package net.ssehub.kernel_haven.undead_analyzer;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -19,7 +19,7 @@ import net.ssehub.kernel_haven.cnf.VmToCnfConverter;
 import net.ssehub.kernel_haven.code_model.CodeElement;
 import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.Configuration;
-import net.ssehub.kernel_haven.default_analyses.DeadCodeFinder.DeadCodeBlock;
+import net.ssehub.kernel_haven.undead_analyzer.DeadCodeFinder.DeadCodeBlock;
 import net.ssehub.kernel_haven.util.FormatException;
 import net.ssehub.kernel_haven.util.io.TableElement;
 import net.ssehub.kernel_haven.util.io.TableRow;

@@ -1,4 +1,4 @@
-package net.ssehub.kernel_haven.default_analyses;
+package net.ssehub.kernel_haven.undead_analyzer;
 
 import net.ssehub.kernel_haven.SetUpException;
 import net.ssehub.kernel_haven.analysis.AnalysisComponent;

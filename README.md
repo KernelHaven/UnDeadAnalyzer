@@ -7,12 +7,12 @@ This analysis detects dead code blocks or Kconfig (`CONFIG_`) variables, which a
 
 ## Capabilities
 
-* Dead code analysis via: `net.ssehub.kernel_haven.default_analyses.DeadCodeAnalysis`
-* Unused variables analysis via: `net.ssehub.kernel_haven.default_analyses.MissingAnalysis`
+* Dead code analysis via: `net.ssehub.kernel_haven.undead_analyzer.DeadCodeAnalysis`
+* Unused variables analysis via: `net.ssehub.kernel_haven.undead_analyzer.MissingAnalysis`
 
 ## Usage
 
-To use this analysis, set `analysis.class` to `net.ssehub.kernel_haven.default_analyses.DeadCodeAnalysis` or `net.ssehub.kernel_haven.default_analyses.MissingAnalysis` in the KernelHaven properties.
+To use this analysis, set `analysis.class` to `net.ssehub.kernel_haven.undead_analyzer.DeadCodeAnalysis` or `net.ssehub.kernel_haven.undead_analyzer.MissingAnalysis` in the KernelHaven properties.
 
 ### Dependencies
 
