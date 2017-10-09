@@ -300,5 +300,10 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
             LOGGER.logException("Invalid variability model", e);
         }
     }
+
+    @Override
+    public String getResultName() {
+        return "Dead Code Blocks";
+    }
     
 }

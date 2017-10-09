@@ -248,4 +248,9 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
         }
     }
 
+    @Override
+    public String getResultName() {
+        return "Missing Variables";
+    }
+
 }
