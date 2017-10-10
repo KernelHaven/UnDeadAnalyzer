@@ -35,7 +35,8 @@ import net.ssehub.kernel_haven.variability_model.VariabilityVariable;
 public class MissingVariablesFinder extends AnalysisComponent<String> {
 
     private static final Setting<Analysis> MISSING_TYPE =
-            new EnumSetting<>("analysis.missing.type", Analysis.class, true, Analysis.DEFINED_BUT_NOT_USED, "TODO");
+            new EnumSetting<>("analysis.missing.type", Analysis.class, true, Analysis.DEFINED_BUT_NOT_USED, "Defines "
+                    + "the type of missing analysis to execute.");
     
     private AnalysisComponent<VariabilityModel> vmComponent;
 
