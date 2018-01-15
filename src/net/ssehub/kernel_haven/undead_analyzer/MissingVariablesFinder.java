@@ -105,8 +105,10 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
             break;
         }
         
-        for (String variable : variables) {
-            addResult(variable);
+        if (variables != null) {
+            for (String variable : variables) {
+                addResult(variable);
+            }
         }
     }
 
