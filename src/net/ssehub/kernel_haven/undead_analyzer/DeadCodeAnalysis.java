@@ -4,6 +4,7 @@ import net.ssehub.kernel_haven.SetUpException;
 import net.ssehub.kernel_haven.analysis.AnalysisComponent;
 import net.ssehub.kernel_haven.analysis.PipelineAnalysis;
 import net.ssehub.kernel_haven.config.Configuration;
+import net.ssehub.kernel_haven.util.null_checks.NonNull;
 
 /**
  * Creates a pipeline for dead code analysis.
@@ -17,7 +18,7 @@ public class DeadCodeAnalysis extends PipelineAnalysis {
      * 
      * @param config The global configuration.
      */
-    public DeadCodeAnalysis(Configuration config) {
+    public DeadCodeAnalysis(@NonNull Configuration config) {
         super(config);
     }
 
