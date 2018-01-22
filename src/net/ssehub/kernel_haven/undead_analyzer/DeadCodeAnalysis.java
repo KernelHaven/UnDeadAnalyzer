@@ -23,7 +23,7 @@ public class DeadCodeAnalysis extends PipelineAnalysis {
     }
 
     @Override
-    protected AnalysisComponent<?> createPipeline() throws SetUpException {
+    protected @NonNull AnalysisComponent<?> createPipeline() throws SetUpException {
         return new DeadCodeFinder(config, getVmComponent(), getBmComponent(), getCmComponent());
     }
 
