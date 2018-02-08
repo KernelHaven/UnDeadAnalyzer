@@ -1,5 +1,7 @@
 package net.ssehub.kernel_haven.undead_analyzer;
 
+import static net.ssehub.kernel_haven.util.null_checks.NullHelpers.notNull;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,6 +23,7 @@ import net.ssehub.kernel_haven.util.logic.Disjunction;
 import net.ssehub.kernel_haven.util.logic.Formula;
 import net.ssehub.kernel_haven.util.logic.Negation;
 import net.ssehub.kernel_haven.util.logic.Variable;
+import net.ssehub.kernel_haven.util.null_checks.NonNull;
 import net.ssehub.kernel_haven.variability_model.VariabilityModel;
 import net.ssehub.kernel_haven.variability_model.VariabilityVariable;
 
@@ -34,15 +37,15 @@ import net.ssehub.kernel_haven.variability_model.VariabilityVariable;
  */
 public class MissingVariablesFinder extends AnalysisComponent<String> {
 
-    private static final Setting<Analysis> MISSING_TYPE =
+    private static final @NonNull Setting<@NonNull Analysis> MISSING_TYPE =
             new EnumSetting<>("analysis.missing.type", Analysis.class, true, Analysis.DEFINED_BUT_NOT_USED, "Defines "
                     + "the type of missing analysis to execute.");
     
-    private AnalysisComponent<VariabilityModel> vmComponent;
+    private @NonNull AnalysisComponent<VariabilityModel> vmComponent;
 
-    private AnalysisComponent<BuildModel> bmComponent;
+    private @NonNull AnalysisComponent<BuildModel> bmComponent;
 
-    private AnalysisComponent<SourceFile> cmComponent;
+    private @NonNull AnalysisComponent<SourceFile> cmComponent;
 
     /**
      * The different types of missing analyzes.
@@ -51,7 +54,7 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
         DEFINED_BUT_NOT_USED, USED_BUT_NOT_DEFINED,
     }
 
-    private Analysis analyse;
+    private @NonNull Analysis analyse;
 
     /**
      * Default Constructor.
@@ -68,13 +71,17 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
      * @throws SetUpException
      *             if analysis.missing.type is wrong.
      */
-    public MissingVariablesFinder(Configuration config, AnalysisComponent<VariabilityModel> vmComponent,
-            AnalysisComponent<BuildModel> bmComponent, AnalysisComponent<SourceFile> cmComponent)
+    public MissingVariablesFinder(@NonNull Configuration config,
+            @NonNull AnalysisComponent<VariabilityModel> vmComponent,
+            @NonNull AnalysisComponent<BuildModel> bmComponent, @NonNull AnalysisComponent<SourceFile> cmComponent)
             throws SetUpException {
         super(config);
         
         config.registerSetting(MISSING_TYPE);
         analyse = config.getValue(MISSING_TYPE);
+        this.vmComponent = vmComponent;
+        this.bmComponent = bmComponent;
+        this.cmComponent = cmComponent;
     }
 
     @Override
@@ -82,13 +89,18 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
         VariabilityModel vm = vmComponent.getNextResult();
         BuildModel bm = bmComponent.getNextResult();
 
-        List<SourceFile> cm = new LinkedList<>();
+        if (bm == null || vm == null) {
+            LOGGER.logError("Couldn't get models");
+            return;
+        }
+        
+        List<@NonNull SourceFile> cm = new LinkedList<>();
         SourceFile file;
         while ((file = cmComponent.getNextResult()) != null) {
             cm.add(file);
         }
 
-        Set<String> variables = null;
+        Set<@NonNull String> variables = null;
         switch (analyse) {
         case DEFINED_BUT_NOT_USED:
             LOGGER.logInfo("Defined but unused analysis");
@@ -123,16 +135,17 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
      *            The files to search in. Never <code>null</code>.
      * @return variables The set of variables, flagged with true or false whether if the variable is used in the code.
      */
-    public Set<String> definedButUnused(VariabilityModel vm, BuildModel bm, List<SourceFile> files) {
+    public @NonNull Set<@NonNull String> definedButUnused(@NonNull VariabilityModel vm, @NonNull BuildModel bm,
+            @NonNull List<@NonNull SourceFile> files) {
         // Fill a map
-        Map<String, Boolean> variables = new HashMap<>();
+        Map<@NonNull String, Boolean> variables = new HashMap<>();
         for (VariabilityVariable variabilityVariable : vm.getVariables()) {
             variables.put(variabilityVariable.getName(), false);
         }
         // Check in build model
         for (File file : bm) {
-            Set<String> names = new HashSet<>();
-            getVariableNamesInFormula(names, bm.getPc(file));
+            Set<@NonNull String> names = new HashSet<>();
+            getVariableNamesInFormula(names, notNull(bm.getPc(file)));
             for (String var : names) {
                 variables.put(var, true);
             }
@@ -140,7 +153,7 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
         // Check in code model
         for (SourceFile file : files) {
             for (CodeElement element : file) {
-                Set<String> names = new HashSet<>();
+                Set<@NonNull String> names = new HashSet<>();
                 getVariableNamesInElement(element, names);
 
                 for (String var : names) {
@@ -148,8 +161,8 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
                 }
             }
         }
-        Set<String> definedButUnused = new HashSet<>();
-        for (Map.Entry<String, Boolean> entry : variables.entrySet()) {
+        Set<@NonNull String> definedButUnused = new HashSet<>();
+        for (Map.Entry<@NonNull String, Boolean> entry : variables.entrySet()) {
             if (!entry.getValue()) {
                 definedButUnused.add(entry.getKey());
             }
@@ -168,12 +181,13 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
      *            The files to search in. Never <code>null</code>.
      * @return variables The set of variables, flagged with true or false whether if the variable is used in the code.
      */
-    public Set<String> usedButNotDefined(VariabilityModel vm, BuildModel bm, List<SourceFile> files) {
-        Map<String, Boolean> variables = new HashMap<>();
+    public @NonNull Set<@NonNull String> usedButNotDefined(@NonNull VariabilityModel vm, @NonNull BuildModel bm,
+            @NonNull List<@NonNull SourceFile> files) {
+        Map<@NonNull String, Boolean> variables = new HashMap<>();
         // Fill a map with build model
         for (File file : bm) {
-            Set<String> names = new HashSet<>();
-            getVariableNamesInFormula(names, bm.getPc(file));
+            Set<@NonNull String> names = new HashSet<>();
+            getVariableNamesInFormula(names, notNull(bm.getPc(file)));
             for (String var : names) {
                 variables.put(var, false);
             }
@@ -181,7 +195,7 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
         // Fill same map with code model
         for (SourceFile file : files) {
             for (CodeElement element : file) {
-                Set<String> names = new HashSet<>();
+                Set<@NonNull String> names = new HashSet<>();
                 getVariableNamesInElement(element, names);
                 for (String var : names) {
                     variables.put(var, false);
@@ -196,8 +210,8 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
             }
         }
         // Set results
-        Set<String> definedButUnused = new HashSet<>();
-        for (Map.Entry<String, Boolean> entry : variables.entrySet()) {
+        Set<@NonNull String> definedButUnused = new HashSet<>();
+        for (Map.Entry<@NonNull String, Boolean> entry : variables.entrySet()) {
             if (!entry.getValue()) {
                 definedButUnused.add(entry.getKey());
             }
@@ -214,7 +228,7 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
      * @param result
      *            The resulting set of variable names
      */
-    private void getVariableNamesInElement(CodeElement element, Set<String> result) {
+    private void getVariableNamesInElement(@NonNull CodeElement element, @NonNull Set<@NonNull String> result) {
         getVariableNamesInFormula(result, element.getPresenceCondition());
 
         for (CodeElement child : element.iterateNestedElements()) {
@@ -231,7 +245,7 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
      * @param names
      *            A set to fill with call by reference. Never <code>null</code>.
      */
-    private void getVariableNamesInFormula(Set<String> names, Formula formular) {
+    private void getVariableNamesInFormula(@NonNull Set<@NonNull String> names, @NonNull Formula formular) {
         if (formular instanceof Variable) {
             Variable var = (Variable) formular;
             if (var.getName().startsWith("CONFIG_")) {
@@ -252,7 +266,7 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
     }
 
     @Override
-    public String getResultName() {
+    public @NonNull String getResultName() {
         return "Missing Variables";
     }
 

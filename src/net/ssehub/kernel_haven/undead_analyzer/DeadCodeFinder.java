@@ -1,5 +1,7 @@
 package net.ssehub.kernel_haven.undead_analyzer;
 
+import static net.ssehub.kernel_haven.util.null_checks.NullHelpers.notNull;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,6 +27,8 @@ import net.ssehub.kernel_haven.util.io.TableElement;
 import net.ssehub.kernel_haven.util.io.TableRow;
 import net.ssehub.kernel_haven.util.logic.Conjunction;
 import net.ssehub.kernel_haven.util.logic.Formula;
+import net.ssehub.kernel_haven.util.null_checks.NonNull;
+import net.ssehub.kernel_haven.util.null_checks.Nullable;
 import net.ssehub.kernel_haven.variability_model.VariabilityModel;
 
 /**
@@ -34,19 +38,19 @@ import net.ssehub.kernel_haven.variability_model.VariabilityModel;
  */
 public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
     
-    private AnalysisComponent<VariabilityModel > vmComponent;
+    private @NonNull AnalysisComponent<VariabilityModel > vmComponent;
     
-    private AnalysisComponent<BuildModel > bmComponent;
+    private @NonNull AnalysisComponent<BuildModel > bmComponent;
     
-    private AnalysisComponent<SourceFile > cmComponent;
+    private @NonNull AnalysisComponent<SourceFile > cmComponent;
     
     private SatSolver solver;
     
     private IFormulaToCnfConverter converter;
     
-    private List<DeadCodeBlock> result;
+    private List<@NonNull DeadCodeBlock> result;
     
-    private Map<Formula, Boolean> satCache;
+    private @NonNull Map<Formula, Boolean> satCache;
     
     /**
      * Creates a dead code analysis.
@@ -56,8 +60,8 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
      * @param bmComponent The component to provide the build model.
      * @param cmComponent The component to provide the code model.
      */
-    public DeadCodeFinder(Configuration config, AnalysisComponent<VariabilityModel> vmComponent,
-            AnalysisComponent<BuildModel> bmComponent, AnalysisComponent<SourceFile> cmComponent) {
+    public DeadCodeFinder(@NonNull Configuration config, @NonNull AnalysisComponent<VariabilityModel> vmComponent,
+            @NonNull AnalysisComponent<BuildModel> bmComponent, @NonNull AnalysisComponent<SourceFile> cmComponent) {
         super(config);
         satCache = new HashMap<>(10000);
         this.vmComponent = vmComponent;
@@ -75,10 +79,11 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
      * 
      * @throws FormatException If the {@link VariabilityModel} has an invalid constraint model file.
      */
-    private List<DeadCodeBlock> findDeadCodeBlocks(VariabilityModel vm, BuildModel bm, SourceFile sourceFile)
-            throws FormatException {
+    private @NonNull List<@NonNull DeadCodeBlock> findDeadCodeBlocks(@NonNull VariabilityModel vm, @NonNull BuildModel bm,
+            @NonNull SourceFile sourceFile) throws FormatException {
         
-        result = new ArrayList<>();
+        List<@NonNull DeadCodeBlock> result = new ArrayList<>();
+        this.result = result;
         
         Cnf vmCnf = new VmToCnfConverter().convertVmToCnf(vm);
         solver = new SatSolver(vmCnf);
@@ -119,7 +124,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
      * @throws ConverterException If the conversion to CNF fails.
      * @throws SolverException If the SAT-solver fails.
      */
-    private boolean isSat(Formula pc) throws ConverterException, SolverException {
+    private boolean isSat(@NonNull Formula pc) throws ConverterException, SolverException {
         Boolean sat = satCache.get(pc);
         
         if (sat == null) {
@@ -149,7 +154,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
      * @throws ConverterException If converting the formula to CNF fails.
      * @throws SolverException If solving the CNF fails.
      */
-    private void checkElement(CodeElement element, Formula filePc, SourceFile sourceFile)
+    private void checkElement(@NonNull CodeElement element, @NonNull Formula filePc, @NonNull SourceFile sourceFile)
             throws ConverterException, SolverException {
         
         Formula pc = new Conjunction(element.getPresenceCondition(), filePc);
@@ -171,22 +176,22 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
     @TableRow
     public static class DeadCodeBlock {
         
-        private File sourceFile;
+        private @NonNull File sourceFile;
         
-        private Formula filePc;
+        private @Nullable Formula filePc;
         
         private int startLine;
 
         private int endLine;
         
-        private Formula presenceCondition;
+        private @Nullable Formula presenceCondition;
         
         /**
          * Creates a dead code block.
          * @param sourceFile The source file.
          * @param line The line of the element.
          */
-        public DeadCodeBlock(File sourceFile, int line) {
+        public DeadCodeBlock(@NonNull File sourceFile, int line) {
             this.sourceFile = sourceFile;
             this.startLine = line;
             this.endLine = 0;
@@ -201,7 +206,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
          * @param deadElement An element which was identified to be dead.
          * @param filePc The presence condition for the complete file, maybe <tt>null</tt>
          */
-        public DeadCodeBlock(CodeElement deadElement, Formula filePc) {
+        public DeadCodeBlock(@NonNull CodeElement deadElement, @NonNull Formula filePc) {
             this(deadElement.getSourceFile(), deadElement.getLineStart());
             this.endLine = deadElement.getLineEnd();
             this.presenceCondition = deadElement.getPresenceCondition();
@@ -214,7 +219,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
          * @return The source file.
          */
         @TableElement(name = "Source File", index = 0)
-        public File getSourceFile() {
+        public @NonNull File getSourceFile() {
             return sourceFile;
         }
         
@@ -224,7 +229,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
          * @return The PC of the file. May be <code>null</code>.
          */
         @TableElement(name = "File PC", index = 1)
-        public Formula getFilePc() {
+        public @Nullable Formula getFilePc() {
             return filePc;
         }
         
@@ -252,12 +257,12 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
          * @return The PC.
          */
         @TableElement(name = "Presence Condition", index = 4)
-        public Formula getPresenceCondition() {
+        public @Nullable Formula getPresenceCondition() {
             return presenceCondition;
         }
         
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             char separator = ' ';
             StringBuffer result = new StringBuffer();
             result.append(sourceFile.getPath());
@@ -276,7 +281,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
                 result.append(presenceCondition.toString());
             }            
             
-            return result.toString();
+            return notNull(result.toString());
         }
         
     }
@@ -286,11 +291,16 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         VariabilityModel vm = vmComponent.getNextResult();
         BuildModel bm = bmComponent.getNextResult();
         
+        if (vm == null || bm == null) {
+            LOGGER.logError("Couldn't get models");
+            return;
+        }
+        
         try {
             
             SourceFile file;
             while ((file = cmComponent.getNextResult()) != null) {
-                List<DeadCodeBlock> deadBlocks = findDeadCodeBlocks(vm, bm, file);
+                List<@NonNull DeadCodeBlock> deadBlocks = findDeadCodeBlocks(vm, bm, file);
                 for (DeadCodeBlock block : deadBlocks) {
                     addResult(block);
                 }

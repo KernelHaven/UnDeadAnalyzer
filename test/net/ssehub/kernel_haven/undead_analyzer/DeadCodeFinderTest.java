@@ -39,6 +39,7 @@ import net.ssehub.kernel_haven.undead_analyzer.DeadCodeFinder.DeadCodeBlock;
 import net.ssehub.kernel_haven.util.Logger;
 import net.ssehub.kernel_haven.util.logic.Negation;
 import net.ssehub.kernel_haven.util.logic.Variable;
+import net.ssehub.kernel_haven.util.null_checks.NonNull;
 import net.ssehub.kernel_haven.variability_model.VariabilityModel;
 import net.ssehub.kernel_haven.variability_model.VariabilityVariable;
 
@@ -48,10 +49,11 @@ import net.ssehub.kernel_haven.variability_model.VariabilityVariable;
  * @author El-Sharkawy
  *
  */
+@SuppressWarnings("null")
 public class DeadCodeFinderTest {
 
     private static final File TESTDATA_DIR = new File(AllTests.TESTDATA_DIR, "deadCodeAnalysis");
-    private static final File VM_FILE = new File(TESTDATA_DIR, "varModel.cnf");
+    private static final @NonNull File VM_FILE = new File(TESTDATA_DIR, "varModel.cnf");
     
     /**
      * Initializes a new {@link DeadCodeFinder} and its resources.
