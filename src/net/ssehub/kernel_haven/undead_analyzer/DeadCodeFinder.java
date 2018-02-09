@@ -79,8 +79,8 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
      * 
      * @throws FormatException If the {@link VariabilityModel} has an invalid constraint model file.
      */
-    private @NonNull List<@NonNull DeadCodeBlock> findDeadCodeBlocks(@NonNull VariabilityModel vm, @NonNull BuildModel bm,
-            @NonNull SourceFile sourceFile) throws FormatException {
+    private @NonNull List<@NonNull DeadCodeBlock> findDeadCodeBlocks(@NonNull VariabilityModel vm,
+        @NonNull BuildModel bm, @NonNull SourceFile sourceFile) throws FormatException {
         
         List<@NonNull DeadCodeBlock> result = new ArrayList<>();
         this.result = result;

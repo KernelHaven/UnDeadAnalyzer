@@ -74,7 +74,7 @@ public class DeadCodeFinderTest {
      */
     public DeadCodeFinder createComponent(CodeElement element) throws SetUpException {
         // Generate configuration
-        TestConfiguration tConfig = null;
+        @NonNull TestConfiguration tConfig = null;
         Properties config = new Properties();
         try {
             tConfig = new TestConfiguration(config);
