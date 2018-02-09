@@ -32,8 +32,10 @@ public class FormulaRelevancyChecker implements IFormulaVisitor<Boolean> {
      *     model iff this value is <tt>true</tt> <b>and</b> varModel is not <tt>null</tt>.
      */
     public FormulaRelevancyChecker(VariabilityModel varModel, boolean considerVmVarsOnly) {
-        this.considerVmVarsOnly = (null != varModel) ? considerVmVarsOnly : false;
-        definedVariables = this.considerVmVarsOnly ? new HashSet<>(varModel.getVariableMap().keySet()) : null;
+        if (varModel != null && considerVmVarsOnly) {
+            this.considerVmVarsOnly = true;
+            definedVariables = new HashSet<>(varModel.getVariableMap().keySet());
+        }
     }
     
     /**

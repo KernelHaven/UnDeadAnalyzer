@@ -164,7 +164,8 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
             throws ConverterException, SolverException {
         
         Formula pc = new Conjunction(element.getPresenceCondition(), filePc);
-        boolean considerBlock = considerVmVarsOnly ? relevancyChecker.visit(element.getPresenceCondition()) : true;
+        FormulaRelevancyChecker checker = this.relevancyChecker;
+        boolean considerBlock = checker != null ? checker.visit(element.getPresenceCondition()) : true;
         
         if (considerBlock && !isSat(pc)) {
             DeadCodeBlock deadBlock = new DeadCodeBlock(element, filePc);
