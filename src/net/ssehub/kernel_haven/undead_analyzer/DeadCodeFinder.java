@@ -21,6 +21,7 @@ import net.ssehub.kernel_haven.cnf.VmToCnfConverter;
 import net.ssehub.kernel_haven.code_model.CodeElement;
 import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.Configuration;
+import net.ssehub.kernel_haven.config.DefaultSettings;
 import net.ssehub.kernel_haven.undead_analyzer.DeadCodeFinder.DeadCodeBlock;
 import net.ssehub.kernel_haven.util.FormatException;
 import net.ssehub.kernel_haven.util.io.TableElement;
@@ -52,6 +53,9 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
     
     private @NonNull Map<Formula, Boolean> satCache;
     
+    private boolean considerVmVarsOnly;
+    private @Nullable FormulaRelevancyChecker relevancyChecker;
+    
     /**
      * Creates a dead code analysis.
      *  
@@ -67,6 +71,8 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         this.vmComponent = vmComponent;
         this.bmComponent = bmComponent;
         this.cmComponent = cmComponent;
+        
+        considerVmVarsOnly = config.getValue(DefaultSettings.ANALYSIS_USE_VARMODEL_VARIABLES_ONLY);
     }
     
     /**
@@ -74,7 +80,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
      * 
      * @param vm The variability model.
      * @param bm The build model.
-     * @param sourceFile The source file to serach in.
+     * @param sourceFile The source file to search in.
      * @return The list of dead code blocks.
      * 
      * @throws FormatException If the {@link VariabilityModel} has an invalid constraint model file.
@@ -158,8 +164,9 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
             throws ConverterException, SolverException {
         
         Formula pc = new Conjunction(element.getPresenceCondition(), filePc);
-
-        if (!isSat(pc)) {
+        boolean considerBlock = considerVmVarsOnly ? relevancyChecker.visit(element.getPresenceCondition()) : true;
+        
+        if (considerBlock && !isSat(pc)) {
             DeadCodeBlock deadBlock = new DeadCodeBlock(element, filePc);
             LOGGER.logInfo("Found dead block: " + deadBlock);
             result.add(deadBlock);
@@ -294,6 +301,10 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         if (vm == null || bm == null) {
             LOGGER.logError("Couldn't get models");
             return;
+        }
+        
+        if (considerVmVarsOnly) {
+            relevancyChecker = new FormulaRelevancyChecker(vm, considerVmVarsOnly);
         }
         
         try {
