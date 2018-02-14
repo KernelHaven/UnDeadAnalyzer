@@ -45,7 +45,20 @@ public class FormulaRelevancyChecker implements IFormulaVisitor<Boolean> {
      * @return <tt>true</tt> if the variable is relevant, <tt>false</tt> otherwise.
      */
     private boolean isRelevant(@NonNull String variable) {
-        return (considerVmVarsOnly) ? definedVariables.contains(variable) : true;
+        boolean isRelevant;
+        if (considerVmVarsOnly) {
+            isRelevant = definedVariables.contains(variable);
+            
+            // Consider MODULE-variables heuristically
+            if (!isRelevant && variable.endsWith("_MODULE")) {
+                int endIndex = variable.length() - "_MODULE".length();
+                isRelevant = definedVariables.contains(variable.substring(0, endIndex));
+            }
+        } else {
+            isRelevant = true;
+        }
+        
+        return isRelevant;
     }
 
     @Override
