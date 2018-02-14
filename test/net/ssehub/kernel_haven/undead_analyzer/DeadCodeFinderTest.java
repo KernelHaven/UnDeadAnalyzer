@@ -33,6 +33,7 @@ import net.ssehub.kernel_haven.build_model.BuildModel;
 import net.ssehub.kernel_haven.code_model.CodeBlock;
 import net.ssehub.kernel_haven.code_model.CodeElement;
 import net.ssehub.kernel_haven.code_model.SourceFile;
+import net.ssehub.kernel_haven.config.DefaultSettings;
 import net.ssehub.kernel_haven.test_utils.TestAnalysisComponentProvider;
 import net.ssehub.kernel_haven.test_utils.TestConfiguration;
 import net.ssehub.kernel_haven.undead_analyzer.DeadCodeFinder.DeadCodeBlock;
@@ -72,7 +73,7 @@ public class DeadCodeFinderTest {
      * 
      * @throws SetUpException unwanted.
      */
-    public DeadCodeFinder createComponent(CodeElement element) throws SetUpException {
+    public DeadCodeFinder createComponent(CodeElement element, boolean considerVmOnly) throws SetUpException {
         // Generate configuration
         @NonNull TestConfiguration tConfig = null;
         Properties config = new Properties();
@@ -81,6 +82,7 @@ public class DeadCodeFinderTest {
         } catch (SetUpException e) {
             Assert.fail("Could not generate test configuration: " + e.getMessage());
         }
+        tConfig.setValue(DefaultSettings.ANALYSIS_USE_VARMODEL_VARIABLES_ONLY, considerVmOnly);
         
         Logger.init();
         
@@ -122,7 +124,7 @@ public class DeadCodeFinderTest {
      */
     @Test
     public void testNoDeadElements() throws  SetUpException {
-        assertThat(createComponent(null).getNextResult(), nullValue());
+        assertThat(createComponent(null, false).getNextResult(), nullValue());
     }
     
     /**
@@ -133,13 +135,42 @@ public class DeadCodeFinderTest {
     @Test
     public void testDeadElement() throws SetUpException {
         DeadCodeFinder analyser = createComponent(new CodeBlock(12, 15, new File("file"),
-                new Negation(new Variable("BETA")), new Negation(new Variable("BETA"))));
+                new Negation(new Variable("BETA")), new Negation(new Variable("BETA"))), false);
         
         DeadCodeBlock block = analyser.getNextResult();
         assertThat(block, notNullValue());
         System.out.println(block.toString());
 
         assertThat(analyser.getNextResult(), nullValue());
-        
     }
+    
+    /**
+     * Tests a file, which has a dead code element.
+     * 
+     * @throws SetUpException unwanted.
+     */
+    @Test
+    public void testDeadElementWithOnlyVmVars() throws SetUpException {
+        DeadCodeFinder analyser = createComponent(new CodeBlock(12, 15, new File("file"),
+                new Negation(new Variable("BETA")), new Negation(new Variable("BETA"))), true);
+        
+        DeadCodeBlock block = analyser.getNextResult();
+        assertThat(block, notNullValue());
+        System.out.println(block.toString());
+
+        assertThat(analyser.getNextResult(), nullValue());
+    }
+    
+    /**
+     * Tests a file, which has no dead elements.
+     * 
+     * @throws SetUpException unwanted.
+     */
+    @Test
+    public void testNoDeadElementsWithNonVmVars() throws  SetUpException {
+        assertThat(createComponent(new CodeBlock(12, 15, new File("file"),
+                new Negation(new Variable("NON_VM")), new Negation(new Variable("NON_VM"))), true).getNextResult(),
+                nullValue());
+    }
+    
 }

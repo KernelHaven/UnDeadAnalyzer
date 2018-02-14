@@ -12,6 +12,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(Suite.class)
 @SuiteClasses({
     DeadCodeFinderTest.class,
+    FormulaRelevancyCheckerTest.class,
     })
 public class AllTests {
     // runs tests defined in SuiteClasses
