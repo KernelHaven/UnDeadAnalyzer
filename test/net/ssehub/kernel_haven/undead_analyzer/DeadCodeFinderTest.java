@@ -69,6 +69,8 @@ public class DeadCodeFinderTest {
      * </code></pre>
      * 
      * @param element The code element to add to the source file.
+     * @param considerVmOnly Whether to consider variables from the variability model only.
+     * 
      * @return The created DeadCodeAnalysis.
      * 
      * @throws SetUpException unwanted.

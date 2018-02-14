@@ -41,6 +41,14 @@ public class FormulaRelevancyCheckerTest {
         return varModel;
     }
     
+    /**
+     * Creates a formula using the two variable names.
+     * 
+     * @param var1 The first variable name.
+     * @param var2 The second variable name.
+     * 
+     * @return A formula.
+     */
     private static @NonNull Formula makeFormula(@NonNull String var1, @NonNull String var2) {
         return new Disjunction(new Conjunction(new Negation(False.INSTANCE), new Variable(var1)),
                 new Disjunction(True.INSTANCE, new Variable(var2)));
