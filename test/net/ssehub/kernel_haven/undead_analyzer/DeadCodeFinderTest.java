@@ -43,6 +43,7 @@ import net.ssehub.kernel_haven.util.logic.Variable;
 import net.ssehub.kernel_haven.util.null_checks.NonNull;
 import net.ssehub.kernel_haven.variability_model.VariabilityModel;
 import net.ssehub.kernel_haven.variability_model.VariabilityVariable;
+import net.ssehub.kernel_haven.variability_model.VariabilityModelDescriptor.ConstraintFileType;
 
 /**
  * Tests for {@link DeadCodeFinder}.
@@ -95,6 +96,7 @@ public class DeadCodeFinderTest {
         variables.add(new VariabilityVariable("BETA", "bool", 2));
         variables.add(new VariabilityVariable("GAMMA", "bool", 3));
         VariabilityModel vm = new VariabilityModel(VM_FILE, variables);
+        vm.getDescriptor().setConstraintFileType(ConstraintFileType.DIMACS);
         Assert.assertNotNull("Error: VariabilityModel not initialized.", vm);
         AnalysisComponent<VariabilityModel> vmComponent = new TestAnalysisComponentProvider<VariabilityModel>(vm);
         
