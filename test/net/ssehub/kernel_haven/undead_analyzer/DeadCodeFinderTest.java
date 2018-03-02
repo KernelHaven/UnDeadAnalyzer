@@ -37,13 +37,12 @@ import net.ssehub.kernel_haven.config.DefaultSettings;
 import net.ssehub.kernel_haven.test_utils.TestAnalysisComponentProvider;
 import net.ssehub.kernel_haven.test_utils.TestConfiguration;
 import net.ssehub.kernel_haven.undead_analyzer.DeadCodeFinder.DeadCodeBlock;
-import net.ssehub.kernel_haven.util.Logger;
 import net.ssehub.kernel_haven.util.logic.Negation;
 import net.ssehub.kernel_haven.util.logic.Variable;
 import net.ssehub.kernel_haven.util.null_checks.NonNull;
 import net.ssehub.kernel_haven.variability_model.VariabilityModel;
-import net.ssehub.kernel_haven.variability_model.VariabilityVariable;
 import net.ssehub.kernel_haven.variability_model.VariabilityModelDescriptor.ConstraintFileType;
+import net.ssehub.kernel_haven.variability_model.VariabilityVariable;
 
 /**
  * Tests for {@link DeadCodeFinder}.
@@ -86,8 +85,6 @@ public class DeadCodeFinderTest {
             Assert.fail("Could not generate test configuration: " + e.getMessage());
         }
         tConfig.setValue(DefaultSettings.ANALYSIS_USE_VARMODEL_VARIABLES_ONLY, considerVmOnly);
-        
-        Logger.init();
         
         // Load variability model
         Set<VariabilityVariable> variables = new HashSet<>();
