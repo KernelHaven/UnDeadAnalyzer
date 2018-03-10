@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!-- author: moritz, kevin, Sascha El-Sharkawy -->
-<project name="defaultanalyses" default="jenkins" basedir="." xmlns:jacoco="antlib:org.jacoco.ant" xmlns:cs="antlib:com.puppycrawl.tools.checkstyle.ant">
-	<description>Builds, tests, and runs the project DummyAnalysis.</description>
+<project name="UnDeadAnalyzer" default="jenkins" basedir=".">
+	<description>Analysis components for detecting dead code blocks</description>
 
 	<!-- Load Marcros on Jenkins -->
 	<include file="../../KernelHaven_Infrastructure/workspace/KernelHavenMacros.xml" as="KH_Common" optional="true" />
@@ -25,4 +25,5 @@
 		<get src="${infrastructure.location}" dest="${dependencies.dir}/kernelhaven.jar" />
 		<get src="${CnfUtils.location}" dest="${dependencies.dir}/CnfUtils.jar" />
 	</target>
+
 </project>
