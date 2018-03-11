@@ -1,28 +1,35 @@
 # UnDeadAnalyzer
 
-An analysis plug-in for [KernelHaven](https://github.com/KernelHaven/KernelHaven).
-This analysis detects dead code blocks or Kconfig (`CONFIG_`) variables, which are either:
-* defined in Kconfig but not used in code or build files
-* used in code or build files, but not defined in Kconfig
+![Build Status](http://jenkins.sse.uni-hildesheim.de/buildStatus/icon?job=KernelHaven_UnDeadAnalyzer)
+
+An analysis plugin for [KernelHaven](https://github.com/KernelHaven/KernelHaven).
+
+Analysis components for detecting dead code.
 
 ## Capabilities
 
-* Dead code analysis via: `net.ssehub.kernel_haven.undead_analyzer.DeadCodeAnalysis`
-* Unused variables analysis via: `net.ssehub.kernel_haven.undead_analyzer.MissingAnalysis`
+* Detect dead code blocks (blocks that can never be selected via variability)
+* Find variability variables which are either:
+	* defined in variability model but not used in code or build files
+	* used in code or build files, but not defined in variability model
 
 ## Usage
 
-To use this analysis, set `analysis.class` to `net.ssehub.kernel_haven.undead_analyzer.DeadCodeAnalysis` or `net.ssehub.kernel_haven.undead_analyzer.MissingAnalysis` in the KernelHaven properties.
+Place [`UnDeadAnalyzer.jar`](https://jenkins.sse.uni-hildesheim.de/view/KernelHaven/job/KernelHaven_UnDeadAnalyzer/lastSuccessfulBuild/artifact/build/jar/UnDeadAnalyzer.jar) in the plugins folder of KernelHaven.
 
-### Dependencies
+The following analysis components can be used as part of a `ConfiguredPipelineAnalysis`:
+* `net.ssehub.kernel_haven.undead_analyzer.DeadCodeFinder` to find dead code blocks
+* `net.ssehub.kernel_haven.undead_analyzer.MissingVariablesFinder` to find missing variables
 
-In addition to KernelHaven, this analysis has the following dependencies:
+Alternatively `analysis.class` can be set to one of
+* `net.ssehub.kernel_haven.undead_analyzer.DeadCodeAnalysis` to run a dead code analysis
+
+
+## Dependencies
+
+In addition to KernelHaven, this plugin has the following dependencies:
 * [CnfUtils](https://github.com/KernelHaven/CnfUtils)
 
-### Configuration
+## License
 
-In addition to the default ones, this analysis has the following configuration options in the KernelHaven properties:
-
-| Key | Mandatory | Default | Example | Description |
-|-----|-----------|---------|---------|-------------|
-| `analysis.missing.type` | No | `D` | `U` | Sets the type of missing analysis. `D` for "defined but not used", `U` for "used but not defined". Not case sensitive. |
+This plugin is licensed under the [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0.html).
