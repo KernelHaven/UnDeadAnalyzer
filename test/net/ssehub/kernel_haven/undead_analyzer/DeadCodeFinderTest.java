@@ -15,6 +15,7 @@
  */
 package net.ssehub.kernel_haven.undead_analyzer;
 
+import static net.ssehub.kernel_haven.util.logic.FormulaBuilder.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -37,7 +38,6 @@ import net.ssehub.kernel_haven.config.DefaultSettings;
 import net.ssehub.kernel_haven.test_utils.TestAnalysisComponentProvider;
 import net.ssehub.kernel_haven.test_utils.TestConfiguration;
 import net.ssehub.kernel_haven.undead_analyzer.DeadCodeFinder.DeadCodeBlock;
-import net.ssehub.kernel_haven.util.logic.Negation;
 import net.ssehub.kernel_haven.util.logic.Variable;
 import net.ssehub.kernel_haven.util.null_checks.NonNull;
 import net.ssehub.kernel_haven.variability_model.VariabilityModel;
@@ -136,7 +136,7 @@ public class DeadCodeFinderTest {
     @Test
     public void testDeadElement() throws SetUpException {
         DeadCodeFinder analyser = createComponent(new CodeBlock(12, 15, new File("file"),
-                new Negation(new Variable("BETA")), new Negation(new Variable("BETA"))), false);
+                not("BETA"), not("BETA")), false);
         
         DeadCodeBlock block = analyser.getNextResult();
         assertThat(block, notNullValue());
@@ -153,7 +153,7 @@ public class DeadCodeFinderTest {
     @Test
     public void testDeadElementWithOnlyVmVars() throws SetUpException {
         DeadCodeFinder analyser = createComponent(new CodeBlock(12, 15, new File("file"),
-                new Negation(new Variable("BETA")), new Negation(new Variable("BETA"))), true);
+                not("BETA"), not("BETA")), true);
         
         DeadCodeBlock block = analyser.getNextResult();
         assertThat(block, notNullValue());
@@ -170,7 +170,7 @@ public class DeadCodeFinderTest {
     @Test
     public void testNoDeadElementsWithNonVmVars() throws  SetUpException {
         assertThat(createComponent(new CodeBlock(12, 15, new File("file"),
-                new Negation(new Variable("NON_VM")), new Negation(new Variable("NON_VM"))), true).getNextResult(),
+                not("NON_VM"), not("NON_VM")), true).getNextResult(),
                 nullValue());
     }
     
