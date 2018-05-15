@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import net.ssehub.kernel_haven.analysis.AnalysisComponent;
 import net.ssehub.kernel_haven.build_model.BuildModel;
@@ -296,6 +297,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
 
     @Override
     protected void execute() {
+    	long start = System.nanoTime();
         VariabilityModel vm = vmComponent.getNextResult();
         BuildModel bm = bmComponent.getNextResult();
         
@@ -321,6 +323,8 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         } catch (FormatException e) {
             LOGGER.logException("Invalid variability model", e);
         }
+        long totalTime = System.nanoTime() - start;
+        LOGGER.logDebug(this.getClass().getSimpleName() + " duration:"  + TimeUnit.MILLISECONDS.convert(totalTime, TimeUnit.NANOSECONDS) + "ms");
     }
 
     @Override
