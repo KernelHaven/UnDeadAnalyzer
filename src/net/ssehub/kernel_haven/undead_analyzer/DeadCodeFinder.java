@@ -39,22 +39,21 @@ import net.ssehub.kernel_haven.variability_model.VariabilityModel;
  */
 public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
     
-    private @NonNull AnalysisComponent<VariabilityModel > vmComponent;
+    protected @NonNull AnalysisComponent<VariabilityModel > vmComponent;
     
-    private @NonNull AnalysisComponent<BuildModel > bmComponent;
+    protected @NonNull AnalysisComponent<BuildModel > bmComponent;
     
-    private @NonNull AnalysisComponent<SourceFile > cmComponent;
+    protected @NonNull AnalysisComponent<SourceFile > cmComponent;
     
-    private SatSolver solver;
+    protected boolean considerVmVarsOnly;
     
-    private IFormulaToCnfConverter converter;
+    protected @Nullable FormulaRelevancyChecker relevancyChecker;
     
-    private List<@NonNull DeadCodeBlock> result;
+    protected VariabilityModel vm;
     
-    private @NonNull Map<Formula, Boolean> satCache;
+    protected Cnf vmCnf;
     
-    private boolean considerVmVarsOnly;
-    private @Nullable FormulaRelevancyChecker relevancyChecker;
+    protected BuildModel bm;
     
     /**
      * Creates a dead code analysis.
@@ -67,7 +66,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
     public DeadCodeFinder(@NonNull Configuration config, @NonNull AnalysisComponent<VariabilityModel> vmComponent,
             @NonNull AnalysisComponent<BuildModel> bmComponent, @NonNull AnalysisComponent<SourceFile> cmComponent) {
         super(config);
-        satCache = new HashMap<>(10000);
+        
         this.vmComponent = vmComponent;
         this.bmComponent = bmComponent;
         this.cmComponent = cmComponent;
@@ -76,27 +75,46 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
     }
     
     /**
-     * Finds dead code blocks. Package visibility for test cases.
+     * A class that holds all variables relevant for solving SAT. This is created once per
+     * {@link DeadCodeFinder#findDeadCodeBlocks(SourceFile))}, so that this method is thread-safe.
+     */
+    private static class SatUtilities {
+        
+        private @NonNull IFormulaToCnfConverter converter;
+        
+        private @NonNull SatSolver solver;
+        
+        private @NonNull Map<Formula, Boolean> satCache;
+
+        /**
+         * Creates this instance.
+         * 
+         * @param converter the formula to CNF converter.
+         * @param solver The SAT solver.
+         * @param satCache The SAT cache.
+         */
+        SatUtilities(@NonNull IFormulaToCnfConverter converter, @NonNull SatSolver solver,
+                @NonNull Map<Formula, Boolean> satCache) {
+            this.converter = converter;
+            this.solver = solver;
+            this.satCache = satCache;
+        }
+        
+    }
+    
+    /**
+     * Finds dead code blocks. This method is thread-safe.
      * 
-     * @param vm The variability model.
-     * @param bm The build model.
      * @param sourceFile The source file to search in.
      * @return The list of dead code blocks.
-     * 
-     * @throws FormatException If the {@link VariabilityModel} has an invalid constraint model file.
      */
-    private @NonNull List<@NonNull DeadCodeBlock> findDeadCodeBlocks(@NonNull VariabilityModel vm,
-        @NonNull BuildModel bm, @NonNull SourceFile sourceFile) throws FormatException {
+    protected @NonNull List<@NonNull DeadCodeBlock> findDeadCodeBlocks(@NonNull SourceFile sourceFile) {
         
         List<@NonNull DeadCodeBlock> result = new ArrayList<>();
-        this.result = result;
         
-        Cnf vmCnf = new VmToCnfConverter().convertVmToCnf(vm);
-        solver = new SatSolver(vmCnf);
-        
-        converter = FormulaToCnfConverterFactory.create(Strategy.RECURISVE_REPLACING);
-        
-        satCache.clear(); // clear after each source file, so that it doesn't get too big
+        SatUtilities satUtils = new SatUtilities(
+                FormulaToCnfConverterFactory.create(Strategy.RECURISVE_REPLACING),
+                new SatSolver(notNull(vmCnf)), new HashMap<>(10000));
         
         Formula filePc = bm.getPc(sourceFile.getPath());
         
@@ -109,13 +127,12 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
             
             for (CodeElement element : sourceFile) {
                 try {
-                    checkElement(element, filePc, sourceFile);
+                    checkElement(element, filePc, sourceFile, satUtils, result);
                 } catch (SolverException | ConverterException e) {
                     LOGGER.logException("Exception while trying to check element", e);
                 }
             }
         }
-        
         
         return result;
     }
@@ -125,16 +142,20 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
      * to speed up when the same formula is passed to it several times.
      * 
      * @param pc The formula to check.
+     * @param satUtils The sat utils to use.
+     * 
      * @return Whether the formula is satisfiable with the variability model.
      * 
      * @throws ConverterException If the conversion to CNF fails.
      * @throws SolverException If the SAT-solver fails.
      */
-    private boolean isSat(@NonNull Formula pc) throws ConverterException, SolverException {
-        Boolean sat = satCache.get(pc);
+    private boolean isSat(@NonNull Formula pc, @NonNull SatUtilities satUtils)
+            throws ConverterException, SolverException {
+        
+        Boolean sat = satUtils.satCache.get(pc);
         
         if (sat == null) {
-            Cnf pcCnf = converter.convert(pc);
+            Cnf pcCnf = satUtils.converter.convert(pc);
             
             String[] cnfLines = pcCnf.toString().split("\n");
             String[] output = new String[cnfLines.length + 1];
@@ -142,8 +163,8 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
             output[0] = "PcCnf: ";
             LOGGER.logDebug(output);
             
-            sat = solver.isSatisfiable(pcCnf);
-            satCache.put(pc, sat);
+            sat = satUtils.solver.isSatisfiable(pcCnf);
+            satUtils.satCache.put(pc, sat);
             LOGGER.logDebug("sat(" + pc + ") = " + sat);
         }
 
@@ -156,25 +177,28 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
      * @param element The element to check.
      * @param filePc The presence condition of the file.
      * @param sourceFile The source file; used for creating the result.
+     * @param satUtils The SAT utils to use.
+     * @param result The list to add result {@link DeadCodeBlock}s to.
      * 
      * @throws ConverterException If converting the formula to CNF fails.
      * @throws SolverException If solving the CNF fails.
      */
-    private void checkElement(@NonNull CodeElement element, @NonNull Formula filePc, @NonNull SourceFile sourceFile)
+    private void checkElement(@NonNull CodeElement element, @NonNull Formula filePc, @NonNull SourceFile sourceFile,
+            @NonNull SatUtilities satUtils, @NonNull List<@NonNull DeadCodeBlock> result)
             throws ConverterException, SolverException {
         
         Formula pc = new Conjunction(element.getPresenceCondition(), filePc);
         FormulaRelevancyChecker checker = this.relevancyChecker;
         boolean considerBlock = checker != null ? checker.visit(element.getPresenceCondition()) : true;
         
-        if (considerBlock && !isSat(pc)) {
+        if (considerBlock && !isSat(pc, satUtils)) {
             DeadCodeBlock deadBlock = new DeadCodeBlock(element, filePc);
             LOGGER.logInfo("Found dead block: " + deadBlock);
             result.add(deadBlock);
         }
         
         for (CodeElement child : element.iterateNestedElements()) {
-            checkElement(child, filePc, sourceFile);
+            checkElement(child, filePc, sourceFile, satUtils, result);
         }
     }
 
@@ -296,23 +320,24 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
 
     @Override
     protected void execute() {
-        VariabilityModel vm = vmComponent.getNextResult();
-        BuildModel bm = bmComponent.getNextResult();
+        vm = vmComponent.getNextResult();
+        bm = bmComponent.getNextResult();
         
         if (vm == null || bm == null) {
             LOGGER.logError("Couldn't get models");
             return;
         }
         
-        if (considerVmVarsOnly) {
-            relevancyChecker = new FormulaRelevancyChecker(vm, considerVmVarsOnly);
-        }
-        
         try {
+            vmCnf = new VmToCnfConverter().convertVmToCnf(notNull(vm)); // vm was initialized in execute()
+            
+            if (considerVmVarsOnly) {
+                relevancyChecker = new FormulaRelevancyChecker(vm, considerVmVarsOnly);
+            }
             
             SourceFile file;
             while ((file = cmComponent.getNextResult()) != null) {
-                List<@NonNull DeadCodeBlock> deadBlocks = findDeadCodeBlocks(vm, bm, file);
+                List<@NonNull DeadCodeBlock> deadBlocks = findDeadCodeBlocks(file);
                 for (DeadCodeBlock block : deadBlocks) {
                     addResult(block);
                 }

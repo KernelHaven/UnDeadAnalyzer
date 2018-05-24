@@ -53,8 +53,8 @@ import net.ssehub.kernel_haven.variability_model.VariabilityVariable;
 @SuppressWarnings("null")
 public class DeadCodeFinderTest {
 
-    private static final File TESTDATA_DIR = new File(AllTests.TESTDATA_DIR, "deadCodeAnalysis");
-    private static final @NonNull File VM_FILE = new File(TESTDATA_DIR, "varModel.cnf");
+    protected static final File TESTDATA_DIR = new File(AllTests.TESTDATA_DIR, "deadCodeAnalysis");
+    protected static final @NonNull File VM_FILE = new File(TESTDATA_DIR, "varModel.cnf");
     
     /**
      * Initializes a new {@link DeadCodeFinder} and its resources.
@@ -140,7 +140,6 @@ public class DeadCodeFinderTest {
         
         DeadCodeBlock block = analyser.getNextResult();
         assertThat(block, notNullValue());
-        System.out.println(block.toString());
 
         assertThat(analyser.getNextResult(), nullValue());
     }
@@ -157,7 +156,6 @@ public class DeadCodeFinderTest {
         
         DeadCodeBlock block = analyser.getNextResult();
         assertThat(block, notNullValue());
-        System.out.println(block.toString());
 
         assertThat(analyser.getNextResult(), nullValue());
     }
