@@ -10,6 +10,7 @@ import net.ssehub.kernel_haven.build_model.BuildModel;
 import net.ssehub.kernel_haven.cnf.VmToCnfConverter;
 import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.Configuration;
+import net.ssehub.kernel_haven.config.Setting;
 import net.ssehub.kernel_haven.util.FormatException;
 import net.ssehub.kernel_haven.util.OrderPreservingParallelizer;
 import net.ssehub.kernel_haven.util.null_checks.NonNull;
@@ -22,26 +23,33 @@ import net.ssehub.kernel_haven.variability_model.VariabilityModel;
  */
 public class ThreadedDeadCodeFinder extends DeadCodeFinder {
 
+    public static final @NonNull Setting<@NonNull Integer> NUMBER_OF_OF_THREADS = new Setting<>(
+            "analysis.undead.threads", Setting.Type.INTEGER, true, "2",
+            "Number of threads to use for the " + ThreadedDeadCodeFinder.class.getName() + ". Must be >= 1.");
     
-    private @NonNull Configuration config;
+    private int numThreads;
 
-	/**
+   /**
      * Creates a dead code analysis.
      *  
      * @param config The user configuration; not used.
      * @param vmComponent The component to provide the variability model.
      * @param bmComponent The component to provide the build model.
      * @param cmComponent The component to provide the code model.
-	 * @throws SetUpException 
+     * @throws SetUpException 
      */
     public ThreadedDeadCodeFinder(@NonNull Configuration config,
             @NonNull AnalysisComponent<VariabilityModel> vmComponent,
-            @NonNull AnalysisComponent<BuildModel> bmComponent, @NonNull AnalysisComponent<SourceFile> cmComponent) throws SetUpException {
+            @NonNull AnalysisComponent<BuildModel> bmComponent, @NonNull AnalysisComponent<SourceFile> cmComponent)
+            throws SetUpException {
+        
         super(config, vmComponent, bmComponent, cmComponent);
         
-    	this.config = config;
-    	UndeadSettings.registerAllSettings(config);
-        
+        config.registerSetting(NUMBER_OF_OF_THREADS);
+        numThreads = config.getValue(NUMBER_OF_OF_THREADS);
+        if (numThreads < 1) {
+            throw new SetUpException(NUMBER_OF_OF_THREADS.getKey() + " is lower than 1");
+        }
     }
 
     @Override
@@ -61,24 +69,17 @@ public class ThreadedDeadCodeFinder extends DeadCodeFinder {
                 relevancyChecker = new FormulaRelevancyChecker(vm, considerVmVarsOnly);
             }
             
-            int threadCount = config.getValue(UndeadSettings.NUMBER_OF_OF_THREADS);
-            if (threadCount < 1) {
-            	LOGGER.logWarning("Thread number was <1, falling back to using 1 thread.");
-            	threadCount = 1;
-            }
-            
             OrderPreservingParallelizer<SourceFile, List<@NonNull DeadCodeBlock>> parallelizer
                 = new OrderPreservingParallelizer<>(this::findDeadCodeBlocks, (deadBlocks) -> {
                     for (DeadCodeBlock block : deadBlocks) {
                         addResult(block);
                     }
-                }, threadCount);
+                }, numThreads);
             
             SourceFile file;
             while ((file = cmComponent.getNextResult()) != null) {
                 parallelizer.add(file);
             }
-            
 
             parallelizer.end();
             parallelizer.join();
