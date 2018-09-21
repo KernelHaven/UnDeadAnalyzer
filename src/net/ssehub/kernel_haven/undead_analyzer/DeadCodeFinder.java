@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.ssehub.kernel_haven.SetUpException;
 import net.ssehub.kernel_haven.analysis.AnalysisComponent;
 import net.ssehub.kernel_haven.build_model.BuildModel;
 import net.ssehub.kernel_haven.cnf.Cnf;
@@ -15,7 +16,8 @@ import net.ssehub.kernel_haven.cnf.ConverterException;
 import net.ssehub.kernel_haven.cnf.FormulaToCnfConverterFactory;
 import net.ssehub.kernel_haven.cnf.FormulaToCnfConverterFactory.Strategy;
 import net.ssehub.kernel_haven.cnf.IFormulaToCnfConverter;
-import net.ssehub.kernel_haven.cnf.SatSolver;
+import net.ssehub.kernel_haven.cnf.ISatSolver;
+import net.ssehub.kernel_haven.cnf.SatSolverFactory;
 import net.ssehub.kernel_haven.cnf.SolverException;
 import net.ssehub.kernel_haven.cnf.VmToCnfConverter;
 import net.ssehub.kernel_haven.code_model.CodeElement;
@@ -55,6 +57,8 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
     
     protected BuildModel bm;
     
+    private @NonNull Configuration config;
+    
     /**
      * Creates a dead code analysis.
      *  
@@ -66,6 +70,8 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
     public DeadCodeFinder(@NonNull Configuration config, @NonNull AnalysisComponent<VariabilityModel> vmComponent,
             @NonNull AnalysisComponent<BuildModel> bmComponent, @NonNull AnalysisComponent<SourceFile> cmComponent) {
         super(config);
+        
+        this.config = config;
         
         this.vmComponent = vmComponent;
         this.bmComponent = bmComponent;
@@ -82,7 +88,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         
         private @NonNull IFormulaToCnfConverter converter;
         
-        private @NonNull SatSolver solver;
+        private @NonNull ISatSolver solver;
         
         private @NonNull Map<Formula, Boolean> satCache;
 
@@ -93,7 +99,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
          * @param solver The SAT solver.
          * @param satCache The SAT cache.
          */
-        SatUtilities(@NonNull IFormulaToCnfConverter converter, @NonNull SatSolver solver,
+        SatUtilities(@NonNull IFormulaToCnfConverter converter, @NonNull ISatSolver solver,
                 @NonNull Map<Formula, Boolean> satCache) {
             this.converter = converter;
             this.solver = solver;
@@ -112,9 +118,16 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         
         List<@NonNull DeadCodeBlock> result = new ArrayList<>();
         
-        SatUtilities satUtils = new SatUtilities(
-                FormulaToCnfConverterFactory.create(Strategy.RECURISVE_REPLACING),
-                new SatSolver(notNull(vmCnf)), new HashMap<>(10000));
+        SatUtilities satUtils;
+        try {
+            satUtils = new SatUtilities(
+                    FormulaToCnfConverterFactory.create(Strategy.RECURISVE_REPLACING),
+                    SatSolverFactory.createSolver(config, null, vmCnf, false), new HashMap<>(10000));
+            
+        } catch (SetUpException e) {
+            LOGGER.logException("Error creating SAT solver", e);
+            throw new RuntimeException(e);
+        }
         
         Formula filePc = bm.getPc(sourceFile.getPath());
         
