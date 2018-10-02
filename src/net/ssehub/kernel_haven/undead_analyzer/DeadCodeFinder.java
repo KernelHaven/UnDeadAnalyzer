@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.ssehub.kernel_haven.SetUpException;
 import net.ssehub.kernel_haven.analysis.AnalysisComponent;
 import net.ssehub.kernel_haven.build_model.BuildModel;
 import net.ssehub.kernel_haven.cnf.Cnf;
@@ -57,8 +56,6 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
     
     protected BuildModel bm;
     
-    private @NonNull Configuration config;
-    
     /**
      * Creates a dead code analysis.
      *  
@@ -70,8 +67,6 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
     public DeadCodeFinder(@NonNull Configuration config, @NonNull AnalysisComponent<VariabilityModel> vmComponent,
             @NonNull AnalysisComponent<BuildModel> bmComponent, @NonNull AnalysisComponent<SourceFile> cmComponent) {
         super(config);
-        
-        this.config = config;
         
         this.vmComponent = vmComponent;
         this.bmComponent = bmComponent;
@@ -118,16 +113,9 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         
         List<@NonNull DeadCodeBlock> result = new ArrayList<>();
         
-        SatUtilities satUtils;
-        try {
-            satUtils = new SatUtilities(
-                    FormulaToCnfConverterFactory.create(Strategy.RECURISVE_REPLACING),
-                    SatSolverFactory.createSolver(config, null, vmCnf, false), new HashMap<>(10000));
-            
-        } catch (SetUpException e) {
-            LOGGER.logException("Error creating SAT solver", e);
-            throw new RuntimeException(e);
-        }
+        SatUtilities satUtils = new SatUtilities(
+                FormulaToCnfConverterFactory.create(Strategy.RECURISVE_REPLACING),
+                SatSolverFactory.createSolver(vmCnf, false), new HashMap<>(10000));
         
         Formula filePc = bm.getPc(sourceFile.getPath());
         
