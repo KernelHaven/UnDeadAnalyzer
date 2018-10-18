@@ -25,6 +25,7 @@ import net.ssehub.kernel_haven.config.Configuration;
 import net.ssehub.kernel_haven.config.DefaultSettings;
 import net.ssehub.kernel_haven.undead_analyzer.DeadCodeFinder.DeadCodeBlock;
 import net.ssehub.kernel_haven.util.FormatException;
+import net.ssehub.kernel_haven.util.ProgressLogger;
 import net.ssehub.kernel_haven.util.io.TableElement;
 import net.ssehub.kernel_haven.util.io.TableRow;
 import net.ssehub.kernel_haven.util.logic.Conjunction;
@@ -336,13 +337,19 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
                 relevancyChecker = new FormulaRelevancyChecker(vm, considerVmVarsOnly);
             }
             
+            ProgressLogger progress = new ProgressLogger(notNull(getClass().getSimpleName()));
+            
             SourceFile file;
             while ((file = cmComponent.getNextResult()) != null) {
                 List<@NonNull DeadCodeBlock> deadBlocks = findDeadCodeBlocks(file);
                 for (DeadCodeBlock block : deadBlocks) {
                     addResult(block);
                 }
+                
+                progress.oneDone();
             }
+            
+            progress.close();
             
         } catch (FormatException e) {
             LOGGER.logException("Invalid variability model", e);

@@ -13,6 +13,7 @@ import net.ssehub.kernel_haven.config.Configuration;
 import net.ssehub.kernel_haven.config.Setting;
 import net.ssehub.kernel_haven.util.FormatException;
 import net.ssehub.kernel_haven.util.OrderPreservingParallelizer;
+import net.ssehub.kernel_haven.util.ProgressLogger;
 import net.ssehub.kernel_haven.util.null_checks.NonNull;
 import net.ssehub.kernel_haven.variability_model.VariabilityModel;
 
@@ -69,11 +70,16 @@ public class ThreadedDeadCodeFinder extends DeadCodeFinder {
                 relevancyChecker = new FormulaRelevancyChecker(vm, considerVmVarsOnly);
             }
             
+            ProgressLogger progress = new ProgressLogger(notNull(getClass().getSimpleName()));
+            
             OrderPreservingParallelizer<SourceFile, List<@NonNull DeadCodeBlock>> parallelizer
                 = new OrderPreservingParallelizer<>(this::findDeadCodeBlocks, (deadBlocks) -> {
                     for (DeadCodeBlock block : deadBlocks) {
                         addResult(block);
                     }
+                    
+                    progress.oneDone();
+                    
                 }, numThreads);
             
             SourceFile file;
@@ -83,6 +89,8 @@ public class ThreadedDeadCodeFinder extends DeadCodeFinder {
 
             parallelizer.end();
             parallelizer.join();
+            
+            progress.close();
             
         } catch (FormatException e) {
             LOGGER.logException("Invalid variability model", e);
