@@ -346,7 +346,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
                     addResult(block);
                 }
                 
-                progress.oneDone();
+                progress.processedOne();
             }
             
             progress.close();

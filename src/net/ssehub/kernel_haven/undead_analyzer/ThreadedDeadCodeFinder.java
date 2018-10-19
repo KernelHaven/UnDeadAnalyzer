@@ -78,7 +78,7 @@ public class ThreadedDeadCodeFinder extends DeadCodeFinder {
                         addResult(block);
                     }
                     
-                    progress.oneDone();
+                    progress.processedOne();
                     
                 }, numThreads);
             
