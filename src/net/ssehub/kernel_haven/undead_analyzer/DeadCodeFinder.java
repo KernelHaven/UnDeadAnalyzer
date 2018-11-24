@@ -298,7 +298,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         @Override
         public @NonNull String toString() {
             char separator = ' ';
-            StringBuffer result = new StringBuffer();
+            StringBuilder result = new StringBuilder();
             result.append(sourceFile.getPath());
             result.append(separator);
             if (null != filePc) {
