@@ -45,7 +45,7 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
 
     private @NonNull AnalysisComponent<BuildModel> bmComponent;
 
-    private @NonNull AnalysisComponent<SourceFile> cmComponent;
+    private @NonNull AnalysisComponent<SourceFile<?>> cmComponent;
 
     /**
      * The different types of missing analyzes.
@@ -73,7 +73,7 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
      */
     public MissingVariablesFinder(@NonNull Configuration config,
             @NonNull AnalysisComponent<VariabilityModel> vmComponent,
-            @NonNull AnalysisComponent<BuildModel> bmComponent, @NonNull AnalysisComponent<SourceFile> cmComponent)
+            @NonNull AnalysisComponent<BuildModel> bmComponent, @NonNull AnalysisComponent<SourceFile<?>> cmComponent)
             throws SetUpException {
         super(config);
         
@@ -94,8 +94,8 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
             return;
         }
         
-        List<@NonNull SourceFile> cm = new LinkedList<>();
-        SourceFile file;
+        List<@NonNull SourceFile<?>> cm = new LinkedList<>();
+        SourceFile<?> file;
         while ((file = cmComponent.getNextResult()) != null) {
             cm.add(file);
         }
@@ -136,7 +136,7 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
      * @return variables The set of variables, flagged with true or false whether if the variable is used in the code.
      */
     public @NonNull Set<@NonNull String> definedButUnused(@NonNull VariabilityModel vm, @NonNull BuildModel bm,
-            @NonNull List<@NonNull SourceFile> files) {
+            @NonNull List<@NonNull SourceFile<?>> files) {
         // Fill a map
         Map<@NonNull String, Boolean> variables = new HashMap<>();
         for (VariabilityVariable variabilityVariable : vm.getVariables()) {
@@ -151,8 +151,8 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
             }
         }
         // Check in code model
-        for (SourceFile file : files) {
-            for (CodeElement element : file) {
+        for (SourceFile<?> file : files) {
+            for (CodeElement<?> element : file) {
                 Set<@NonNull String> names = new HashSet<>();
                 getVariableNamesInElement(element, names);
 
@@ -182,7 +182,7 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
      * @return variables The set of variables, flagged with true or false whether if the variable is used in the code.
      */
     public @NonNull Set<@NonNull String> usedButNotDefined(@NonNull VariabilityModel vm, @NonNull BuildModel bm,
-            @NonNull List<@NonNull SourceFile> files) {
+            @NonNull List<@NonNull SourceFile<?>> files) {
         Map<@NonNull String, Boolean> variables = new HashMap<>();
         // Fill a map with build model
         for (File file : bm) {
@@ -193,8 +193,8 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
             }
         }
         // Fill same map with code model
-        for (SourceFile file : files) {
-            for (CodeElement element : file) {
+        for (SourceFile<?> file : files) {
+            for (CodeElement<?> element : file) {
                 Set<@NonNull String> names = new HashSet<>();
                 getVariableNamesInElement(element, names);
                 for (String var : names) {
@@ -228,10 +228,10 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
      * @param result
      *            The resulting set of variable names
      */
-    private void getVariableNamesInElement(@NonNull CodeElement element, @NonNull Set<@NonNull String> result) {
+    private void getVariableNamesInElement(@NonNull CodeElement<?> element, @NonNull Set<@NonNull String> result) {
         getVariableNamesInFormula(result, element.getPresenceCondition());
 
-        for (CodeElement child : element.iterateNestedElements()) {
+        for (CodeElement<?> child : element) {
             getVariableNamesInElement(child, result);
         }
     }

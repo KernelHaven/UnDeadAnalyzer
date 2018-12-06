@@ -41,11 +41,11 @@ import net.ssehub.kernel_haven.variability_model.VariabilityModel;
  */
 public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
     
-    protected @NonNull AnalysisComponent<VariabilityModel > vmComponent;
+    protected @NonNull AnalysisComponent<VariabilityModel> vmComponent;
     
-    protected @NonNull AnalysisComponent<BuildModel > bmComponent;
+    protected @NonNull AnalysisComponent<BuildModel> bmComponent;
     
-    protected @NonNull AnalysisComponent<SourceFile > cmComponent;
+    protected @NonNull AnalysisComponent<SourceFile<?>> cmComponent;
     
     protected boolean considerVmVarsOnly;
     
@@ -66,7 +66,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
      * @param cmComponent The component to provide the code model.
      */
     public DeadCodeFinder(@NonNull Configuration config, @NonNull AnalysisComponent<VariabilityModel> vmComponent,
-            @NonNull AnalysisComponent<BuildModel> bmComponent, @NonNull AnalysisComponent<SourceFile> cmComponent) {
+            @NonNull AnalysisComponent<BuildModel> bmComponent, @NonNull AnalysisComponent<SourceFile<?>> cmComponent) {
         super(config);
         
         this.vmComponent = vmComponent;
@@ -110,7 +110,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
      * @param sourceFile The source file to search in.
      * @return The list of dead code blocks.
      */
-    protected @NonNull List<@NonNull DeadCodeBlock> findDeadCodeBlocks(@NonNull SourceFile sourceFile) {
+    protected @NonNull List<@NonNull DeadCodeBlock> findDeadCodeBlocks(@NonNull SourceFile<?> sourceFile) {
         
         List<@NonNull DeadCodeBlock> result = new ArrayList<>();
         
@@ -127,7 +127,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
             LOGGER.logDebug("File PC: " + filePc);
             
             
-            for (CodeElement element : sourceFile) {
+            for (CodeElement<?> element : sourceFile) {
                 try {
                     checkElement(element, filePc, sourceFile, satUtils, result);
                 } catch (SolverException | ConverterException e) {
@@ -185,9 +185,9 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
      * @throws ConverterException If converting the formula to CNF fails.
      * @throws SolverException If solving the CNF fails.
      */
-    private void checkElement(@NonNull CodeElement element, @NonNull Formula filePc, @NonNull SourceFile sourceFile,
-            @NonNull SatUtilities satUtils, @NonNull List<@NonNull DeadCodeBlock> result)
-            throws ConverterException, SolverException {
+    private void checkElement(@NonNull CodeElement<?> element, @NonNull Formula filePc,
+            @NonNull SourceFile<?> sourceFile, @NonNull SatUtilities satUtils,
+            @NonNull List<@NonNull DeadCodeBlock> result) throws ConverterException, SolverException {
         
         Formula pc = new Conjunction(element.getPresenceCondition(), filePc);
         FormulaRelevancyChecker checker = this.relevancyChecker;
@@ -199,7 +199,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
             result.add(deadBlock);
         }
         
-        for (CodeElement child : element.iterateNestedElements()) {
+        for (CodeElement<?> child : element) {
             checkElement(child, filePc, sourceFile, satUtils, result);
         }
     }
@@ -240,7 +240,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
          * @param deadElement An element which was identified to be dead.
          * @param filePc The presence condition for the complete file, maybe <tt>null</tt>
          */
-        public DeadCodeBlock(@NonNull CodeElement deadElement, @NonNull Formula filePc) {
+        public DeadCodeBlock(@NonNull CodeElement<?> deadElement, @NonNull Formula filePc) {
             this(deadElement.getSourceFile(), deadElement.getLineStart());
             this.endLine = deadElement.getLineEnd();
             this.presenceCondition = deadElement.getPresenceCondition();
@@ -339,7 +339,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
             
             ProgressLogger progress = new ProgressLogger(notNull(getClass().getSimpleName()));
             
-            SourceFile file;
+            SourceFile<?> file;
             while ((file = cmComponent.getNextResult()) != null) {
                 List<@NonNull DeadCodeBlock> deadBlocks = findDeadCodeBlocks(file);
                 for (DeadCodeBlock block : deadBlocks) {

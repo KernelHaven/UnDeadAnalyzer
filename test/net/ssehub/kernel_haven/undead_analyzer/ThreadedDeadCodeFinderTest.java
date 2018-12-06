@@ -30,7 +30,7 @@ public class ThreadedDeadCodeFinderTest extends DeadCodeFinderTest {
 
     @Override
     @SuppressWarnings("null")
-    public DeadCodeFinder createComponent(CodeElement element, boolean considerVmOnly) throws SetUpException {
+    public DeadCodeFinder createComponent(CodeElement<?> element, boolean considerVmOnly) throws SetUpException {
      // Generate configuration
         @NonNull TestConfiguration tConfig = null;
         Properties config = new Properties();
@@ -54,11 +54,11 @@ public class ThreadedDeadCodeFinderTest extends DeadCodeFinderTest {
         
         // Create virtual files
         File file1 = new File(TESTDATA_DIR, "file1.c");
-        SourceFile sourceFile1 = new SourceFile(file1);
+        SourceFile<CodeElement<?>> sourceFile1 = new SourceFile<>(file1);
         if (element != null) {
             sourceFile1.addElement(element);
         }
-        AnalysisComponent<SourceFile> cmComponent = new TestAnalysisComponentProvider<SourceFile>(sourceFile1);
+        AnalysisComponent<SourceFile<?>> cmComponent = new TestAnalysisComponentProvider<SourceFile<?>>(sourceFile1);
         
         // Create virtual build model
         BuildModel bm = new BuildModel();

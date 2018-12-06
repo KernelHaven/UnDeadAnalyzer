@@ -41,7 +41,7 @@ public class ThreadedDeadCodeFinder extends DeadCodeFinder {
      */
     public ThreadedDeadCodeFinder(@NonNull Configuration config,
             @NonNull AnalysisComponent<VariabilityModel> vmComponent,
-            @NonNull AnalysisComponent<BuildModel> bmComponent, @NonNull AnalysisComponent<SourceFile> cmComponent)
+            @NonNull AnalysisComponent<BuildModel> bmComponent, @NonNull AnalysisComponent<SourceFile<?>> cmComponent)
             throws SetUpException {
         
         super(config, vmComponent, bmComponent, cmComponent);
@@ -72,7 +72,7 @@ public class ThreadedDeadCodeFinder extends DeadCodeFinder {
             
             ProgressLogger progress = new ProgressLogger(notNull(getClass().getSimpleName()));
             
-            OrderPreservingParallelizer<SourceFile, List<@NonNull DeadCodeBlock>> parallelizer
+            OrderPreservingParallelizer<SourceFile<?>, List<@NonNull DeadCodeBlock>> parallelizer
                 = new OrderPreservingParallelizer<>(this::findDeadCodeBlocks, (deadBlocks) -> {
                     for (DeadCodeBlock block : deadBlocks) {
                         addResult(block);
@@ -82,7 +82,7 @@ public class ThreadedDeadCodeFinder extends DeadCodeFinder {
                     
                 }, numThreads);
             
-            SourceFile file;
+            SourceFile<?> file;
             while ((file = cmComponent.getNextResult()) != null) {
                 parallelizer.add(file);
             }
