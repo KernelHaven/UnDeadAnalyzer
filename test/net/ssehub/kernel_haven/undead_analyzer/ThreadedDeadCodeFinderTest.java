@@ -6,6 +6,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.junit.Assert;
+import org.junit.Test;
 
 import net.ssehub.kernel_haven.SetUpException;
 import net.ssehub.kernel_haven.analysis.AnalysisComponent;
@@ -71,6 +72,21 @@ public class ThreadedDeadCodeFinderTest extends DeadCodeFinderTest {
         Assert.assertNotNull("Error: DeadCodeAnalysis not initialized.", analyser);
         
         return analyser;
+    }
+    
+    /**
+     * Tests that setting an invalid number of threads throws an exception.
+     * 
+     * @throws SetUpException wanted.
+     */
+    @Test(expected = SetUpException.class)
+    @SuppressWarnings("null")
+    public void testInvalidNumberOfThreads() throws SetUpException {
+        TestConfiguration config = new TestConfiguration(new Properties());
+        config.registerSetting(ThreadedDeadCodeFinder.NUMBER_OF_OF_THREADS);
+        config.setValue(ThreadedDeadCodeFinder.NUMBER_OF_OF_THREADS, 0);
+        
+        new ThreadedDeadCodeFinder(config, null, null, null);
     }
     
 }

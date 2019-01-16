@@ -37,7 +37,7 @@ import net.ssehub.kernel_haven.variability_model.VariabilityVariable;
  */
 public class MissingVariablesFinder extends AnalysisComponent<String> {
 
-    private static final @NonNull Setting<@NonNull Analysis> MISSING_TYPE =
+    public static final @NonNull Setting<@NonNull Analysis> MISSING_TYPE =
             new EnumSetting<>("analysis.missing.type", Analysis.class, true, Analysis.DEFINED_BUT_NOT_USED, "Defines "
                     + "the type of missing analysis to execute.");
     
@@ -50,7 +50,7 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
     /**
      * The different types of missing analyzes.
      */
-    private enum Analysis {
+    public enum Analysis {
         DEFINED_BUT_NOT_USED, USED_BUT_NOT_DEFINED,
     }
 
@@ -147,7 +147,11 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
             Set<@NonNull String> names = new HashSet<>();
             getVariableNamesInFormula(names, notNull(bm.getPc(file)));
             for (String var : names) {
-                variables.put(var, true);
+                if (var.endsWith("_MODULE")) {
+                    variables.put(notNull(var.substring(0, var.length() - "_MODULE".length())), true);
+                } else {
+                    variables.put(var, true);
+                }
             }
         }
         // Check in code model
@@ -157,7 +161,11 @@ public class MissingVariablesFinder extends AnalysisComponent<String> {
                 getVariableNamesInElement(element, names);
 
                 for (String var : names) {
-                    variables.put(var, true);
+                    if (var.endsWith("_MODULE")) {
+                        variables.put(notNull(var.substring(0, var.length() - "_MODULE".length())), true);
+                    } else {
+                        variables.put(var, true);
+                    }
                 }
             }
         }

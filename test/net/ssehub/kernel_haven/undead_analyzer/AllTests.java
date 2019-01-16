@@ -13,6 +13,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
     DeadCodeFinderTest.class,
     FormulaRelevancyCheckerTest.class,
+    MissingVariablesFinderTest.class,
     ThreadedDeadCodeFinderTest.class,
     })
 public class AllTests {
