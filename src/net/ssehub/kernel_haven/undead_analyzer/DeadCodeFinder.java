@@ -1,6 +1,5 @@
 package net.ssehub.kernel_haven.undead_analyzer;
 
-import static net.ssehub.kernel_haven.config.Setting.Type.BOOLEAN;
 import static net.ssehub.kernel_haven.util.null_checks.NullHelpers.notNull;
 
 import java.io.File;
@@ -11,7 +10,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.ssehub.kernel_haven.SetUpException;
 import net.ssehub.kernel_haven.analysis.AnalysisComponent;
 import net.ssehub.kernel_haven.build_model.BuildModel;
 import net.ssehub.kernel_haven.cnf.Cnf;
@@ -28,7 +26,6 @@ import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.Configuration;
 import net.ssehub.kernel_haven.config.DefaultSettings;
 import net.ssehub.kernel_haven.config.DefaultSettings.USAGE_OF_VM_VARS;
-import net.ssehub.kernel_haven.config.Setting;
 import net.ssehub.kernel_haven.undead_analyzer.DeadCodeFinder.DeadCodeBlock;
 import net.ssehub.kernel_haven.util.FormatException;
 import net.ssehub.kernel_haven.util.ProgressLogger;
@@ -47,17 +44,13 @@ import net.ssehub.kernel_haven.variability_model.VariabilityModel;
  */
 public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
 
-    public static final @NonNull Setting<Boolean> VARIABILITY_RELATED_BLOCKS_ONLY = new Setting<Boolean>(
-            "analysis.variability_related_blocks_only", BOOLEAN, true, "FALSE",
-            "defines if only code blocks with CONFIG_ variables are considered for the analysis");
-
     protected @NonNull AnalysisComponent<VariabilityModel> vmComponent;
 
     protected @NonNull AnalysisComponent<BuildModel> bmComponent;
 
     protected @NonNull AnalysisComponent<SourceFile<?>> cmComponent;
 
-    protected USAGE_OF_VM_VARS considerVmVarsOnly;
+    protected USAGE_OF_VM_VARS usageOfVmVars;
 
     protected boolean considerOnlyVariabilityRelatedCodeBlocks;
 
@@ -68,7 +61,6 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
     protected Cnf vmCnf;
 
     protected BuildModel bm;
-
 
     /**
      * Creates a dead code analysis.
@@ -85,14 +77,6 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         this.vmComponent = vmComponent;
         this.bmComponent = bmComponent;
         this.cmComponent = cmComponent;
-
-        considerVmVarsOnly = config.getValue(DefaultSettings.ANALYSIS_USE_VARMODEL_VARIABLES_ONLY);
-        try {
-            config.registerSetting(VARIABILITY_RELATED_BLOCKS_ONLY);
-            considerOnlyVariabilityRelatedCodeBlocks = config.getValue(VARIABILITY_RELATED_BLOCKS_ONLY);
-        } catch (SetUpException e) {
-            considerOnlyVariabilityRelatedCodeBlocks = false;
-        }
 
     }
 
@@ -213,8 +197,6 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         Formula pc = new Conjunction(element.getPresenceCondition(), filePc);
         FormulaRelevancyChecker checker = this.relevancyChecker;
         boolean considerBlock = checker != null ? checker.visit(element.getPresenceCondition()) : true;
-        considerBlock = considerBlock
-                && (!considerOnlyVariabilityRelatedCodeBlocks || checkRelationToVariability(element.getCondition()));
 
         if (considerBlock && !isSat(pc, satUtils)) {
             DeadCodeBlock deadBlock = new DeadCodeBlock(element, filePc);
@@ -225,19 +207,6 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         for (CodeElement<?> child : element) {
             checkElement(child, filePc, sourceFile, satUtils, result);
         }
-    }
-
-    /**
-     * Check relation of a given formula to variability. A condition is considered
-     * to be related to variability if it contains a CONFIG_-Variable
-     *
-     * @param formula the given condition
-     * @return true, if relation to variability is identified
-     */
-    private boolean checkRelationToVariability(Formula formula) {
-        Pattern pattern = Pattern.compile("(?<!(_|\\w|\\d))CONFIG_");
-        Matcher matcher = pattern.matcher(formula.toString());
-        return matcher.find();
     }
 
     /**
@@ -373,9 +342,8 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         try {
             vmCnf = new VmToCnfConverter().convertVmToCnf(notNull(vm)); // vm was initialized in execute()
 
-            boolean considerOnlyVmVars = (considerVmVarsOnly == USAGE_OF_VM_VARS.ANY_VM_USAGE);
-            if (considerOnlyVmVars) {
-                relevancyChecker = new FormulaRelevancyChecker(vm, considerOnlyVmVars);
+            if (this.usageOfVmVars != null && this.usageOfVmVars != DefaultSettings.USAGE_OF_VM_VARS.ALL_ELEMENTS) {
+                relevancyChecker = new FormulaRelevancyChecker(vm, this.usageOfVmVars);
             }
 
             ProgressLogger progress = new ProgressLogger(notNull(getClass().getSimpleName()));

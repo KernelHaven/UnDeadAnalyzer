@@ -9,6 +9,7 @@ import java.util.Set;
 
 import org.junit.Test;
 
+import net.ssehub.kernel_haven.config.DefaultSettings;
 import net.ssehub.kernel_haven.util.logic.Conjunction;
 import net.ssehub.kernel_haven.util.logic.Disjunction;
 import net.ssehub.kernel_haven.util.logic.False;
@@ -36,11 +37,11 @@ public class FormulaRelevancyCheckerTest {
         Set<VariabilityVariable> vars = new HashSet<>();
         vars.add(new VariabilityVariable("ALPHA", "bool"));
         vars.add(new VariabilityVariable("BETA", "bool"));
-        
+
         VariabilityModel varModel = new VariabilityModel(new File("not_existing"), vars);
         return varModel;
     }
-    
+
     /**
      * Creates a formula using the two variable names.
      * 
@@ -55,43 +56,51 @@ public class FormulaRelevancyCheckerTest {
     }
 
     /**
-     * Tests a formula that contains only non-VM variables, and considerVmVariablesOnly = false.
+     * Tests a formula that contains only non-VM variables, and
+     * considerVmVariablesOnly = false.
      */
     @Test
     public void testNonVmVarWithNotConsiderVmVarsOnly() {
-        FormulaRelevancyChecker checker = new FormulaRelevancyChecker(createTestVariabilityModel(), false);
-        
+        FormulaRelevancyChecker checker = new FormulaRelevancyChecker(createTestVariabilityModel(),
+                DefaultSettings.USAGE_OF_VM_VARS.ALL_ELEMENTS);
+
         assertThat(checker.visit(makeFormula("NON_VM_VAR_1", "NON_VM_VAR_2")), is(true));
     }
-    
+
     /**
-     * Tests a formula that contains only non-VM variables, and considerVmVariablesOnly = true.
+     * Tests a formula that contains only non-VM variables, and
+     * considerVmVariablesOnly = true.
      */
     @Test
     public void testNonVmVarWithConsiderVmVarsOnly() {
-        FormulaRelevancyChecker checker = new FormulaRelevancyChecker(createTestVariabilityModel(), true);
-        
+        FormulaRelevancyChecker checker = new FormulaRelevancyChecker(createTestVariabilityModel(),
+                DefaultSettings.USAGE_OF_VM_VARS.ANY_VM_USAGE);
+
         assertThat(checker.visit(makeFormula("NON_VM_VAR_1", "NON_VM_VAR_2")), is(false));
     }
-    
+
     /**
-     * Tests a formula that contains only non-VM variables, and considerVmVariablesOnly = false.
+     * Tests a formula that contains only non-VM variables, and
+     * considerVmVariablesOnly = false.
      */
     @Test
     public void testVmVarWithNotConsiderVmVarsOnly() {
-        FormulaRelevancyChecker checker = new FormulaRelevancyChecker(createTestVariabilityModel(), false);
-        
+        FormulaRelevancyChecker checker = new FormulaRelevancyChecker(createTestVariabilityModel(),
+                DefaultSettings.USAGE_OF_VM_VARS.ALL_ELEMENTS);
+
         assertThat(checker.visit(makeFormula("ALPHA", "BETA")), is(true));
     }
-    
+
     /**
-     * Tests a formula that contains only non-VM variables, and considerVmVariablesOnly = true.
+     * Tests a formula that contains only non-VM variables, and
+     * considerVmVariablesOnly = true.
      */
     @Test
     public void testVmVarWithConsiderVmVarsOnly() {
-        FormulaRelevancyChecker checker = new FormulaRelevancyChecker(createTestVariabilityModel(), true);
-        
+        FormulaRelevancyChecker checker = new FormulaRelevancyChecker(createTestVariabilityModel(),
+                DefaultSettings.USAGE_OF_VM_VARS.ANY_VM_USAGE);
+
         assertThat(checker.visit(makeFormula("ALPHA", "BETA")), is(true));
     }
-    
+
 }
