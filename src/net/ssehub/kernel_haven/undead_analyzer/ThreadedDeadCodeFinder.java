@@ -11,6 +11,7 @@ import net.ssehub.kernel_haven.cnf.VmToCnfConverter;
 import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.Configuration;
 import net.ssehub.kernel_haven.config.Setting;
+import net.ssehub.kernel_haven.config.DefaultSettings.USAGE_OF_VM_VARS;
 import net.ssehub.kernel_haven.util.FormatException;
 import net.ssehub.kernel_haven.util.OrderPreservingParallelizer;
 import net.ssehub.kernel_haven.util.ProgressLogger;
@@ -66,8 +67,9 @@ public class ThreadedDeadCodeFinder extends DeadCodeFinder {
         try {
             vmCnf = new VmToCnfConverter().convertVmToCnf(notNull(vm)); // vm was initialized in execute()
             
-            if (considerVmVarsOnly) {
-                relevancyChecker = new FormulaRelevancyChecker(vm, considerVmVarsOnly);
+            boolean considerOnlyVmVars = (considerVmVarsOnly == USAGE_OF_VM_VARS.ANY_VM_USAGE);
+            if (considerOnlyVmVars) {
+                relevancyChecker = new FormulaRelevancyChecker(vm, considerOnlyVmVars);
             }
             
             ProgressLogger progress = new ProgressLogger(notNull(getClass().getSimpleName()));

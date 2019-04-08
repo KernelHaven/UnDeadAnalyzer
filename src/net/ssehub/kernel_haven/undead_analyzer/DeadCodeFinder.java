@@ -27,6 +27,7 @@ import net.ssehub.kernel_haven.code_model.CodeElement;
 import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.Configuration;
 import net.ssehub.kernel_haven.config.DefaultSettings;
+import net.ssehub.kernel_haven.config.DefaultSettings.USAGE_OF_VM_VARS;
 import net.ssehub.kernel_haven.config.Setting;
 import net.ssehub.kernel_haven.undead_analyzer.DeadCodeFinder.DeadCodeBlock;
 import net.ssehub.kernel_haven.util.FormatException;
@@ -46,7 +47,7 @@ import net.ssehub.kernel_haven.variability_model.VariabilityModel;
  */
 public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
 
-    public static final Setting<Boolean> VARIABILITY_RELATED_BLOCKS_ONLY = new Setting<Boolean>(
+    public static final @NonNull Setting<Boolean> VARIABILITY_RELATED_BLOCKS_ONLY = new Setting<Boolean>(
             "analysis.variability_related_blocks_only", BOOLEAN, true, "FALSE",
             "defines if only code blocks with CONFIG_ variables are considered for the analysis");
 
@@ -56,7 +57,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
 
     protected @NonNull AnalysisComponent<SourceFile<?>> cmComponent;
 
-    protected boolean considerVmVarsOnly;
+    protected USAGE_OF_VM_VARS considerVmVarsOnly;
 
     protected boolean considerOnlyVariabilityRelatedCodeBlocks;
 
@@ -88,8 +89,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         considerVmVarsOnly = config.getValue(DefaultSettings.ANALYSIS_USE_VARMODEL_VARIABLES_ONLY);
         try {
             config.registerSetting(VARIABILITY_RELATED_BLOCKS_ONLY);
-            considerOnlyVariabilityRelatedCodeBlocks = config
-                    .getValue(DefaultSettings.ANALYSIS_USE_VARMODEL_VARIABLES_ONLY);
+            considerOnlyVariabilityRelatedCodeBlocks = config.getValue(VARIABILITY_RELATED_BLOCKS_ONLY);
         } catch (SetUpException e) {
             considerOnlyVariabilityRelatedCodeBlocks = false;
         }
@@ -373,8 +373,9 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         try {
             vmCnf = new VmToCnfConverter().convertVmToCnf(notNull(vm)); // vm was initialized in execute()
 
-            if (considerVmVarsOnly) {
-                relevancyChecker = new FormulaRelevancyChecker(vm, considerVmVarsOnly);
+            boolean considerOnlyVmVars = (considerVmVarsOnly == USAGE_OF_VM_VARS.ANY_VM_USAGE);
+            if (considerOnlyVmVars) {
+                relevancyChecker = new FormulaRelevancyChecker(vm, considerOnlyVmVars);
             }
 
             ProgressLogger progress = new ProgressLogger(notNull(getClass().getSimpleName()));

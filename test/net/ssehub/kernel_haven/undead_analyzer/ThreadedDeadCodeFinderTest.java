@@ -14,13 +14,14 @@ import net.ssehub.kernel_haven.build_model.BuildModel;
 import net.ssehub.kernel_haven.code_model.CodeElement;
 import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.DefaultSettings;
+import net.ssehub.kernel_haven.config.DefaultSettings.USAGE_OF_VM_VARS;
 import net.ssehub.kernel_haven.test_utils.TestAnalysisComponentProvider;
 import net.ssehub.kernel_haven.test_utils.TestConfiguration;
 import net.ssehub.kernel_haven.util.logic.Variable;
 import net.ssehub.kernel_haven.util.null_checks.NonNull;
 import net.ssehub.kernel_haven.variability_model.VariabilityModel;
-import net.ssehub.kernel_haven.variability_model.VariabilityVariable;
 import net.ssehub.kernel_haven.variability_model.VariabilityModelDescriptor.ConstraintFileType;
+import net.ssehub.kernel_haven.variability_model.VariabilityVariable;
 
 /**
  * Tests the {@link ThreadedDeadCodeFinder}.
@@ -31,7 +32,7 @@ public class ThreadedDeadCodeFinderTest extends DeadCodeFinderTest {
 
     @Override
     @SuppressWarnings("null")
-    public DeadCodeFinder createComponent(CodeElement<?> element, boolean considerVmOnly) throws SetUpException {
+    public DeadCodeFinder createComponent(CodeElement<?> element, USAGE_OF_VM_VARS vm_usage) throws SetUpException {
      // Generate configuration
         @NonNull TestConfiguration tConfig = null;
         Properties config = new Properties();
@@ -40,7 +41,7 @@ public class ThreadedDeadCodeFinderTest extends DeadCodeFinderTest {
         } catch (SetUpException e) {
             Assert.fail("Could not generate test configuration: " + e.getMessage());
         }
-        tConfig.setValue(DefaultSettings.ANALYSIS_USE_VARMODEL_VARIABLES_ONLY, considerVmOnly);
+        tConfig.setValue(DefaultSettings.ANALYSIS_USE_VARMODEL_VARIABLES_ONLY, vm_usage);
         
         // Load variability model
         Set<VariabilityVariable> variables = new HashSet<>();
