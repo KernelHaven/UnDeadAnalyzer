@@ -9,7 +9,6 @@ import java.util.Set;
 
 import org.junit.Test;
 
-import net.ssehub.kernel_haven.config.DefaultSettings;
 import net.ssehub.kernel_haven.util.logic.Conjunction;
 import net.ssehub.kernel_haven.util.logic.Disjunction;
 import net.ssehub.kernel_haven.util.logic.False;
@@ -61,8 +60,7 @@ public class FormulaRelevancyCheckerTest {
      */
     @Test
     public void testNonVmVarWithNotConsiderVmVarsOnly() {
-        FormulaRelevancyChecker checker = new FormulaRelevancyChecker(createTestVariabilityModel(),
-                DefaultSettings.USAGE_OF_VM_VARS.ALL_ELEMENTS);
+        FormulaRelevancyChecker checker = new FormulaRelevancyChecker(createTestVariabilityModel(), false);
 
         assertThat(checker.visit(makeFormula("NON_VM_VAR_1", "NON_VM_VAR_2")), is(true));
     }
@@ -73,8 +71,7 @@ public class FormulaRelevancyCheckerTest {
      */
     @Test
     public void testNonVmVarWithConsiderVmVarsOnly() {
-        FormulaRelevancyChecker checker = new FormulaRelevancyChecker(createTestVariabilityModel(),
-                DefaultSettings.USAGE_OF_VM_VARS.ANY_VM_USAGE);
+        FormulaRelevancyChecker checker = new FormulaRelevancyChecker(createTestVariabilityModel(), true);
 
         assertThat(checker.visit(makeFormula("NON_VM_VAR_1", "NON_VM_VAR_2")), is(false));
     }
@@ -85,8 +82,7 @@ public class FormulaRelevancyCheckerTest {
      */
     @Test
     public void testVmVarWithNotConsiderVmVarsOnly() {
-        FormulaRelevancyChecker checker = new FormulaRelevancyChecker(createTestVariabilityModel(),
-                DefaultSettings.USAGE_OF_VM_VARS.ALL_ELEMENTS);
+        FormulaRelevancyChecker checker = new FormulaRelevancyChecker(createTestVariabilityModel(), false);
 
         assertThat(checker.visit(makeFormula("ALPHA", "BETA")), is(true));
     }
@@ -97,8 +93,7 @@ public class FormulaRelevancyCheckerTest {
      */
     @Test
     public void testVmVarWithConsiderVmVarsOnly() {
-        FormulaRelevancyChecker checker = new FormulaRelevancyChecker(createTestVariabilityModel(),
-                DefaultSettings.USAGE_OF_VM_VARS.ANY_VM_USAGE);
+        FormulaRelevancyChecker checker = new FormulaRelevancyChecker(createTestVariabilityModel(), true);
 
         assertThat(checker.visit(makeFormula("ALPHA", "BETA")), is(true));
     }

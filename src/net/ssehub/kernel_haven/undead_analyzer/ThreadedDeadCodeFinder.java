@@ -67,23 +67,22 @@ public class ThreadedDeadCodeFinder extends DeadCodeFinder {
         try {
             vmCnf = new VmToCnfConverter().convertVmToCnf(notNull(vm)); // vm was initialized in execute()
 
-            if (this.usageOfVmVars == DefaultSettings.USAGE_OF_VM_VARS.ANY_VM_USAGE
-                    || this.usageOfVmVars == DefaultSettings.USAGE_OF_VM_VARS.VM_USAGE_IN_CODE) {
-                relevancyChecker = new FormulaRelevancyChecker(vm, this.usageOfVmVars);
+            if (this.usageOfVmVars != DefaultSettings.USAGE_OF_VM_VARS.ALL_ELEMENTS) {
+                relevancyChecker = new FormulaRelevancyChecker(vm, true);
             }
 
             ProgressLogger progress = new ProgressLogger(notNull(getClass().getSimpleName()));
 
-            OrderPreservingParallelizer<SourceFile<?>, List<@NonNull DeadCodeBlock>> parallelizer 
-                = new OrderPreservingParallelizer<>(
-                this::findDeadCodeBlocks, (deadBlocks) -> {
-                    for (DeadCodeBlock block : deadBlocks) {
-                        addResult(block);
-                    }
+            OrderPreservingParallelizer<SourceFile<?>, List<@NonNull DeadCodeBlock>> parallelizer = 
+                    new OrderPreservingParallelizer<>(
+                    this::findDeadCodeBlocks, (deadBlocks) -> {
+                        for (DeadCodeBlock block : deadBlocks) {
+                            addResult(block);
+                        }
 
-                    progress.processedOne();
+                        progress.processedOne();
 
-                }, numThreads);
+                    }, numThreads);
 
             SourceFile<?> file;
             while ((file = cmComponent.getNextResult()) != null) {
