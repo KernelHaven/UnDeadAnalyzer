@@ -67,7 +67,7 @@ public class ThreadedDeadCodeFinder extends DeadCodeFinder {
         try {
             vmCnf = new VmToCnfConverter().convertVmToCnf(notNull(vm)); // vm was initialized in execute()
 
-            if (this.usageOfVmVars != DefaultSettings.USAGE_OF_VM_VARS.ALL_ELEMENTS) {
+            if (this.usageOfVmVars != null && this.usageOfVmVars != DefaultSettings.USAGE_OF_VM_VARS.ALL_ELEMENTS) {
                 relevancyChecker = new FormulaRelevancyChecker(vm, true);
             }
 
