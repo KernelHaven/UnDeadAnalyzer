@@ -23,7 +23,6 @@ import net.ssehub.kernel_haven.code_model.CodeElement;
 import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.Configuration;
 import net.ssehub.kernel_haven.config.DefaultSettings;
-import net.ssehub.kernel_haven.config.DefaultSettings.USAGE_OF_VM_VARS;
 import net.ssehub.kernel_haven.undead_analyzer.DeadCodeFinder.DeadCodeBlock;
 import net.ssehub.kernel_haven.util.FormatException;
 import net.ssehub.kernel_haven.util.ProgressLogger;
@@ -48,9 +47,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
 
     protected @NonNull AnalysisComponent<SourceFile<?>> cmComponent;
 
-    protected USAGE_OF_VM_VARS usageOfVmVars;
-
-    protected boolean considerOnlyVariabilityRelatedCodeBlocks;
+    protected boolean considerVmVarsOnly;
 
     protected @Nullable FormulaRelevancyChecker relevancyChecker;
 
@@ -75,6 +72,8 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         this.vmComponent = vmComponent;
         this.bmComponent = bmComponent;
         this.cmComponent = cmComponent;
+        
+        this.considerVmVarsOnly = config.getValue(DefaultSettings.ANALYSIS_USE_VARMODEL_VARIABLES_ONLY);
 
     }
 
@@ -340,7 +339,7 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         try {
             vmCnf = new VmToCnfConverter().convertVmToCnf(notNull(vm)); // vm was initialized in execute()
 
-            if (this.usageOfVmVars != null && this.usageOfVmVars != DefaultSettings.USAGE_OF_VM_VARS.ALL_ELEMENTS) {
+            if (considerVmVarsOnly) {
                 relevancyChecker = new FormulaRelevancyChecker(vm, true);
             }
 

@@ -35,7 +35,6 @@ import net.ssehub.kernel_haven.code_model.CodeBlock;
 import net.ssehub.kernel_haven.code_model.CodeElement;
 import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.DefaultSettings;
-import net.ssehub.kernel_haven.config.DefaultSettings.USAGE_OF_VM_VARS;
 import net.ssehub.kernel_haven.test_utils.TestAnalysisComponentProvider;
 import net.ssehub.kernel_haven.test_utils.TestConfiguration;
 import net.ssehub.kernel_haven.undead_analyzer.DeadCodeFinder.DeadCodeBlock;
@@ -70,13 +69,13 @@ public class DeadCodeFinderTest {
      * </code></pre>
      * 
      * @param element The code element to add to the source file.
-     * @param vm_usage Whether to consider variables from the variability model only.
+     * @param considerVmVarsOnly Whether to consider variables from the variability model only.
      * 
      * @return The created DeadCodeAnalysis.
      * 
      * @throws SetUpException unwanted.
      */
-    public DeadCodeFinder createComponent(CodeElement<?> element, USAGE_OF_VM_VARS vm_usage) throws SetUpException {
+    public DeadCodeFinder createComponent(CodeElement<?> element, boolean considerVmVarsOnly) throws SetUpException {
         // Generate configuration
         @NonNull TestConfiguration tConfig = null;
         Properties config = new Properties();
@@ -85,7 +84,7 @@ public class DeadCodeFinderTest {
         } catch (SetUpException e) {
             Assert.fail("Could not generate test configuration: " + e.getMessage());
         }
-        tConfig.setValue(DefaultSettings.ANALYSIS_USE_VARMODEL_VARIABLES_ONLY, vm_usage);
+        tConfig.setValue(DefaultSettings.ANALYSIS_USE_VARMODEL_VARIABLES_ONLY, considerVmVarsOnly);
         
         // Load variability model
         Set<VariabilityVariable> variables = new HashSet<>();
@@ -126,7 +125,7 @@ public class DeadCodeFinderTest {
      */
     @Test
     public void testNoDeadElements() throws  SetUpException {
-        assertThat(createComponent(null, USAGE_OF_VM_VARS.ALL_ELEMENTS).getNextResult(), nullValue());
+        assertThat(createComponent(null, false).getNextResult(), nullValue());
     }
     
     /**
@@ -137,7 +136,7 @@ public class DeadCodeFinderTest {
     @Test
     public void testDeadElement() throws SetUpException {
         DeadCodeFinder analyser = createComponent(new CodeBlock(12, 15, new File("file"),
-                not("BETA"), not("BETA")), USAGE_OF_VM_VARS.ALL_ELEMENTS);
+                not("BETA"), not("BETA")), false);
         
         DeadCodeBlock block = analyser.getNextResult();
         assertThat(block, notNullValue());
@@ -153,7 +152,7 @@ public class DeadCodeFinderTest {
     @Test
     public void testDeadElementWithOnlyVmVars() throws SetUpException {
         DeadCodeFinder analyser = createComponent(new CodeBlock(12, 15, new File("file"),
-                not("BETA"), not("BETA")), USAGE_OF_VM_VARS.ANY_VM_USAGE);
+                not("BETA"), not("BETA")), true);
         
         DeadCodeBlock block = analyser.getNextResult();
         assertThat(block, notNullValue());
@@ -169,7 +168,7 @@ public class DeadCodeFinderTest {
     @Test
     public void testNoDeadElementsWithNonVmVars() throws  SetUpException {
         assertThat(createComponent(new CodeBlock(12, 15, new File("file"),
-                not("NON_VM"), not("NON_VM")), USAGE_OF_VM_VARS.ANY_VM_USAGE).getNextResult(),
+                not("NON_VM"), not("NON_VM")), true).getNextResult(),
                 nullValue());
     }
     

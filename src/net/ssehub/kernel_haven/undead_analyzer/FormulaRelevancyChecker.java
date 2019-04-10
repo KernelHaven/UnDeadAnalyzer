@@ -99,7 +99,7 @@ public class FormulaRelevancyChecker implements IFormulaVisitor<Boolean> {
 
     @Override
     public Boolean visitNegation(@NonNull Negation formula) {
-        return !considerVmVarsOnly;
+        return !considerVmVarsOnly || this.visit(formula.getFormula());
     }
 
     @Override
