@@ -64,9 +64,9 @@ public class DeadCodeFinderTest {
      * GAMMA
      * </code></pre>
      * Build Model:
-     * <pre><code>
+     * <pre>{@code 
      * file1.c -> ALPHA
-     * </code></pre>
+     * }</pre>
      * 
      * @param element The code element to add to the source file.
      * @param considerVmVarsOnly Whether to consider variables from the variability model only.

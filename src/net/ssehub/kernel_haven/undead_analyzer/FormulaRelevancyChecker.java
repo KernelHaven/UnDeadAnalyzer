@@ -53,12 +53,10 @@ public class FormulaRelevancyChecker implements IFormulaVisitor<Boolean> {
      *                           - false: Considers all elements in the analysis,
      *                           independently if used elements are defined in the
      *                           variability model.
-     *                           </p>
      *                           <p>
      *                           - true: Considers only elements that contain at
      *                           least one variable defined by the variability
      *                           model.
-     *                           </p>
      * 
      * 
      */
