@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- author: moritz, kevin, Sascha El-Sharkawy -->
+<!-- Author: Adam, Sascha El-Sharkawy -->
 <project name="UnDeadAnalyzer" default="jenkins" basedir=".">
 	<description>Analysis components for detecting dead code blocks</description>
 
