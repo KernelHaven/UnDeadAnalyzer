@@ -15,7 +15,7 @@ Analysis components for detecting dead code.
 
 ## Usage
 
-Place [`UnDeadAnalyzer.jar`](https://jenkins-2.sse.uni-hildesheim.de/view/KernelHaven/job/KH_UnDeadAnalyzer/lastSuccessfulBuild/artifact/build/jar/UnDeadAnalyzer.jar) in the plugins folder of KernelHaven.
+Place [`UnDeadAnalyzer.jar`](https://jenkins-2.sse.uni-hildesheim.de/job/KH_UnDeadAnalyzer/lastSuccessfulBuild/artifact/build/jar/UnDeadAnalyzer.jar) in the plugins folder of KernelHaven.
 
 The following analysis components can be used as part of a `ConfiguredPipelineAnalysis`:
 * `net.ssehub.kernel_haven.undead_analyzer.DeadCodeFinder` to find dead code blocks
