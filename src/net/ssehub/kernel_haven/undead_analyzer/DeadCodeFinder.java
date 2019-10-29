@@ -130,9 +130,9 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
     protected @NonNull List<@NonNull DeadCodeBlock> findDeadCodeBlocks(@NonNull SourceFile<?> sourceFile) {
 
         List<@NonNull DeadCodeBlock> result = new ArrayList<>();
-
-        SatUtilities satUtils = new SatUtilities(FormulaToCnfConverterFactory.create(Strategy.RECURISVE_REPLACING),
-                SatSolverFactory.createSolver(vmCnf, false), new HashMap<>(10000));
+        
+        // satUtils gets initialized lazily.
+        SatUtilities satUtils = null;
 
         Formula filePc = bm.getPc(sourceFile.getPath());
 
@@ -143,6 +143,11 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
             LOGGER.logDebug("File PC: " + filePc);
 
             for (CodeElement<?> element : sourceFile) {
+            	// If at least one element is present, we need to initialize satUtils to enable checking for dead code
+            	if (satUtils == null) {
+            		satUtils = new SatUtilities(FormulaToCnfConverterFactory.create(Strategy.RECURISVE_REPLACING),
+                            SatSolverFactory.createSolver(vmCnf, false), new HashMap<>(10000));
+            	}
                 try {
                     checkElement(element, filePc, sourceFile, satUtils, result);
                 } catch (SolverException | ConverterException e) {
