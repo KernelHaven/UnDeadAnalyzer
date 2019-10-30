@@ -143,11 +143,11 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
             LOGGER.logDebug("File PC: " + filePc);
 
             for (CodeElement<?> element : sourceFile) {
-            	// If at least one element is present, we need to initialize satUtils to enable checking for dead code
-            	if (satUtils == null) {
-            		satUtils = new SatUtilities(FormulaToCnfConverterFactory.create(Strategy.RECURISVE_REPLACING),
+                // If at least one element is present, we need to initialize satUtils to enable checking for dead code
+                if (satUtils == null) {
+                    satUtils = new SatUtilities(FormulaToCnfConverterFactory.create(Strategy.RECURISVE_REPLACING),
                             SatSolverFactory.createSolver(vmCnf, false), new HashMap<>(10000));
-            	}
+                }
                 try {
                     checkElement(element, filePc, sourceFile, satUtils, result);
                 } catch (SolverException | ConverterException e) {
