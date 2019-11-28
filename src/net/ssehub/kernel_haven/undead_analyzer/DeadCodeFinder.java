@@ -288,15 +288,17 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         boolean considerBlock = checker != null ? checker.visit(element.getPresenceCondition()) : true;
 
         if (this.detailedAnalysis) {
-            // check CPP alone
-            if (!satUtils.isSat(element.getPresenceCondition())) { // check CPP alone
-                result.add(new DetailedDeadCodeBlock(element, filePc, Reason.CPP_NOT_SATISFIABLE));
-            } else if (!satUtils.isSat(pc)) { // check CPP and filePC
-                result.add(new DetailedDeadCodeBlock(element, filePc, Reason.CPP_AND_FILE_PC_NOT_SATISFIABLE));
-            } else if (!satUtils.isVmSat(element.getPresenceCondition())) { // check CPP and VM
-                result.add(new DetailedDeadCodeBlock(element, filePc, Reason.CPP_AND_VM_NOT_SATISFIABLE));
-            } else if (!satUtils.isVmSat(pc)) { // check CPP and filePC and VM
-                result.add(new DetailedDeadCodeBlock(element, filePc, Reason.CPP_AND_FILE_PC_AND_VM_NOT_SATISFIABLE));
+            if (!satUtils.isVmSat(pc)) {
+                if (!satUtils.isSat(element.getPresenceCondition())) { // check CPP alone
+                    result.add(new DetailedDeadCodeBlock(element, filePc, Reason.CPP_NOT_SATISFIABLE));
+                } else if (!satUtils.isSat(pc)) { // check CPP and filePC
+                    result.add(new DetailedDeadCodeBlock(element, filePc, Reason.CPP_AND_FILE_PC_NOT_SATISFIABLE));
+                } else if (!satUtils.isVmSat(element.getPresenceCondition())) { // check CPP and VM
+                    result.add(new DetailedDeadCodeBlock(element, filePc, Reason.CPP_AND_VM_NOT_SATISFIABLE));
+                } else { // check CPP and filePC and VM
+                    result.add(new DetailedDeadCodeBlock(element, filePc,
+                            Reason.CPP_AND_FILE_PC_AND_VM_NOT_SATISFIABLE));
+                }
             }
         } else {
             if (considerBlock && !satUtils.isVmSat(pc)) {
