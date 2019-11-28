@@ -31,7 +31,7 @@ import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.DefaultSettings;
 import net.ssehub.kernel_haven.test_utils.TestAnalysisComponentProvider;
 import net.ssehub.kernel_haven.test_utils.TestConfiguration;
-import net.ssehub.kernel_haven.util.logic.Variable;
+import net.ssehub.kernel_haven.util.logic.Formula;
 import net.ssehub.kernel_haven.util.null_checks.NonNull;
 import net.ssehub.kernel_haven.variability_model.VariabilityModel;
 import net.ssehub.kernel_haven.variability_model.VariabilityModelDescriptor.ConstraintFileType;
@@ -46,7 +46,7 @@ public class ThreadedDeadCodeFinderTest extends DeadCodeFinderTest {
 
     @Override
     @SuppressWarnings("null")
-    public DeadCodeFinder createComponent(CodeElement<?> element, boolean considerVmVarsOnly,
+    public DeadCodeFinder createComponent(CodeElement<?> element, @NonNull Formula filePc, boolean considerVmVarsOnly,
             boolean detailedAnalysis) throws SetUpException {
         // Generate configuration
         @NonNull TestConfiguration tConfig = null;
@@ -81,7 +81,7 @@ public class ThreadedDeadCodeFinderTest extends DeadCodeFinderTest {
         
         // Create virtual build model
         BuildModel bm = new BuildModel();
-        bm.add(file1, new Variable(alpha.getName()));
+        bm.add(file1, filePc);
         AnalysisComponent<BuildModel> bmComponent = new TestAnalysisComponentProvider<BuildModel>(bm);
         
         

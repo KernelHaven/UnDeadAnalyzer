@@ -116,24 +116,91 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
 
         private @NonNull IFormulaToCnfConverter converter;
 
-        private @NonNull ISatSolver solver;
+        private @NonNull ISatSolver vmSolver;
+        
+        private @NonNull ISatSolver plainSolver;
 
-        private @NonNull Map<Formula, Boolean> satCache;
+        private @NonNull Map<Formula, Boolean> vmSatCache;
+        
+        private @NonNull Map<Formula, Boolean> plainSatCache;
 
         /**
-         * Creates this instance.
+         * Creates this instances.
          * 
-         * @param converter the formula to CNF converter.
-         * @param solver    The SAT solver.
-         * @param satCache  The SAT cache.
+         * @param vmCnf The variability model as CNF:
          */
-        SatUtilities(@NonNull IFormulaToCnfConverter converter, @NonNull ISatSolver solver,
-                @NonNull Map<Formula, Boolean> satCache) {
-            this.converter = converter;
-            this.solver = solver;
-            this.satCache = satCache;
+        SatUtilities(@NonNull Cnf vmCnf) {
+            this.converter = FormulaToCnfConverterFactory.create(Strategy.RECURISVE_REPLACING);
+            this.vmSolver = SatSolverFactory.createSolver(vmCnf, false);
+            this.plainSolver = SatSolverFactory.createSolver();
+            this.vmSatCache = new HashMap<>(10000);
+            this.plainSatCache = new HashMap<>(10000);
         }
+        
+        /**
+         * Checks whether the given formula is satisfiable with the variability model.
+         * Internally, this method has a cache to speed up when the same formula is
+         * passed to it several times.
+         * 
+         * @param pc The formula to check.
+         * 
+         * @return Whether the formula is satisfiable with the variability model.
+         * 
+         * @throws ConverterException If the conversion to CNF fails.
+         * @throws SolverException If the SAT-solver fails.
+         */
+        public boolean isVmSat(@NonNull Formula pc) throws SolverException, ConverterException {
+            Boolean sat = this.vmSatCache.get(pc);
 
+            if (sat == null) {
+                Cnf pcCnf = this.converter.convert(pc);
+
+                String[] cnfLines = pcCnf.toString().split("\n");
+                String[] output = new String[cnfLines.length + 1];
+                System.arraycopy(cnfLines, 0, output, 1, cnfLines.length);
+                output[0] = "PcCnf: ";
+                LOGGER.logDebug(output);
+
+                sat = this.vmSolver.isSatisfiable(pcCnf);
+                this.vmSatCache.put(pc, sat);
+                LOGGER.logDebug("sat(" + pc + ") = " + sat);
+            }
+
+            return sat;
+        }
+        
+        /**
+         * Checks whether the given formula is satisfiable (without the variability model).
+         * Internally, this method has a cache to speed up when the same formula is
+         * passed to it several times.
+         * 
+         * @param pc The formula to check.
+         * 
+         * @return Whether the formula is satisfiable.
+         * 
+         * @throws ConverterException If the conversion to CNF fails.
+         * @throws SolverException If the SAT-solver fails.
+         */
+        public boolean isSat(@NonNull Formula pc) throws SolverException, ConverterException {
+            Boolean sat = this.plainSatCache.get(pc);
+            
+            if (sat == null) {
+                Cnf pcCnf = this.converter.convert(pc);
+                
+                String[] cnfLines = pcCnf.toString().split("\n");
+                String[] output = new String[cnfLines.length + 1];
+                System.arraycopy(cnfLines, 0, output, 1, cnfLines.length);
+                output[0] = "PcCnf: ";
+                LOGGER.logDebug(output);
+                
+                sat = this.plainSolver.isSatisfiable(pcCnf);
+                this.plainSatCache.put(pc, sat);
+                LOGGER.logDebug("sat(" + pc + ") = " + sat);
+            }
+            
+            return sat;
+        }
+        
     }
 
     /**
@@ -156,57 +223,42 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         } else {
             LOGGER.logInfo("Running for file " + sourceFile.getPath());
             LOGGER.logDebug("File PC: " + filePc);
-
-            for (CodeElement<?> element : sourceFile) {
-                // If at least one element is present, we need to initialize satUtils to enable checking for dead code
-                if (satUtils == null) {
-                    satUtils = new SatUtilities(FormulaToCnfConverterFactory.create(Strategy.RECURISVE_REPLACING),
-                            SatSolverFactory.createSolver(vmCnf, false), new HashMap<>(10000));
-                }
+            
+            boolean foundResult = false;
+            
+            if (this.detailedAnalysis) {
+                satUtils = new SatUtilities(notNull(vmCnf));
+                
                 try {
-                    checkElement(element, filePc, sourceFile, satUtils, result);
+                    if (!satUtils.isSat(filePc)) { // check filePC alone
+                        foundResult = true;
+                        result.add(new DetailedDeadCodeBlock(sourceFile.getPath(), 0, Reason.FILE_PC_NOT_SATISFIABLE));
+                    } else if (!satUtils.isVmSat(filePc)) { // check filePC and VM
+                        foundResult = true;
+                        result.add(new DetailedDeadCodeBlock(sourceFile.getPath(), 0,
+                                Reason.FILE_PC_AND_VM_NOT_SATISFIABLE));
+                    }
                 } catch (SolverException | ConverterException e) {
-                    LOGGER.logException("Exception while trying to check element", e);
+                    LOGGER.logException("Exception while trying to check file PC", e);
+                }
+            }
+
+            if (!foundResult) {
+                for (CodeElement<?> element : sourceFile) {
+                    // initialize satUtils lazily here, so that files with no block don't create one (if detailed=false)
+                    if (satUtils == null) {
+                        satUtils = new SatUtilities(notNull(vmCnf));
+                    }
+                    try {
+                        checkElement(element, filePc, sourceFile, satUtils, result);
+                    } catch (SolverException | ConverterException e) {
+                        LOGGER.logException("Exception while trying to check element", e);
+                    }
                 }
             }
         }
 
         return result;
-    }
-
-    /**
-     * Checks whether the given formula is satisfiable with the variability model.
-     * Internally, this method has a cache to speed up when the same formula is
-     * passed to it several times.
-     * 
-     * @param pc       The formula to check.
-     * @param satUtils The sat utils to use.
-     * 
-     * @return Whether the formula is satisfiable with the variability model.
-     * 
-     * @throws ConverterException If the conversion to CNF fails.
-     * @throws SolverException    If the SAT-solver fails.
-     */
-    private boolean isSat(@NonNull Formula pc, @NonNull SatUtilities satUtils)
-            throws ConverterException, SolverException {
-
-        Boolean sat = satUtils.satCache.get(pc);
-
-        if (sat == null) {
-            Cnf pcCnf = satUtils.converter.convert(pc);
-
-            String[] cnfLines = pcCnf.toString().split("\n");
-            String[] output = new String[cnfLines.length + 1];
-            System.arraycopy(cnfLines, 0, output, 1, cnfLines.length);
-            output[0] = "PcCnf: ";
-            LOGGER.logDebug(output);
-
-            sat = satUtils.solver.isSatisfiable(pcCnf);
-            satUtils.satCache.put(pc, sat);
-            LOGGER.logDebug("sat(" + pc + ") = " + sat);
-        }
-
-        return sat;
     }
 
     /**
@@ -230,10 +282,23 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         FormulaRelevancyChecker checker = this.relevancyChecker;
         boolean considerBlock = checker != null ? checker.visit(element.getPresenceCondition()) : true;
 
-        if (considerBlock && !isSat(pc, satUtils)) {
-            DeadCodeBlock deadBlock = new DeadCodeBlock(element, filePc);
-            LOGGER.logInfo("Found dead block: " + deadBlock);
-            result.add(deadBlock);
+        if (this.detailedAnalysis) {
+            // check CPP alone
+            if (!satUtils.isSat(element.getPresenceCondition())) { // check CPP alone
+                result.add(new DetailedDeadCodeBlock(element, filePc, Reason.CPP_NOT_SATISFIABLE));
+            } else if (!satUtils.isSat(pc)) { // check CPP and filePC
+                result.add(new DetailedDeadCodeBlock(element, filePc, Reason.CPP_AND_FILE_PC_NOT_SATISFIABLE));
+            } else if (!satUtils.isVmSat(element.getPresenceCondition())) { // check CPP and VM
+                result.add(new DetailedDeadCodeBlock(element, filePc, Reason.CPP_AND_VM_NOT_SATISFIABLE));
+            } else if (!satUtils.isVmSat(pc)) { // check CPP and filePC and VM
+                result.add(new DetailedDeadCodeBlock(element, filePc, Reason.CPP_AND_FILE_PC_AND_VM_NOT_SATISFIABLE));
+            }
+        } else {
+            if (considerBlock && !satUtils.isVmSat(pc)) {
+                DeadCodeBlock deadBlock = new DeadCodeBlock(element, filePc);
+                LOGGER.logInfo("Found dead block: " + deadBlock);
+                result.add(deadBlock);
+            }
         }
 
         for (CodeElement<?> child : element) {
@@ -365,6 +430,37 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
      */
     public enum Reason {
         
+        CPP_NOT_SATISFIABLE("C-preprocessor condition alone is not satisfiable"),
+        CPP_AND_VM_NOT_SATISFIABLE("C-preprocessor condition combined with VM is not satisfiable"),
+        
+        FILE_PC_NOT_SATISFIABLE("File PC alone is not satisfiable"),
+        FILE_PC_AND_VM_NOT_SATISFIABLE("File PC combined with VM is not satisfiable"),
+        
+        CPP_AND_FILE_PC_NOT_SATISFIABLE("C-preprocessor condition combined with file PC is not satisfiable"),
+        
+        CPP_AND_FILE_PC_AND_VM_NOT_SATISFIABLE("C-preprocessor condition combined with file PC and VM is"
+                + " not satisfiable");
+        
+        private @NonNull String description;
+        
+        /**
+         * Creates a new reason.
+         * 
+         * @param description A description of this reason.
+         */
+        private Reason(@NonNull String description) {
+            this.description = description;
+        }
+        
+        /**
+         * Describes this reason.
+         * 
+         * @return The description of this reason.
+         */
+        public @NonNull String getDescription() {
+            return description;
+        }
+        
     }
     
     /**
@@ -408,9 +504,18 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
          * 
          * @return The reason why this block is dead.
          */
-        @TableElement(name = "Reason", index = 5)
-        public Reason getReason() {
+        public @NonNull Reason getReason() {
             return reason;
+        }
+        
+        /**
+         * Returns the reason for the deadness of this block as a description string.
+         * 
+         * @return A description of the reason why this block is dead.
+         */
+        @TableElement(name = "Reason", index = 5)
+        public @NonNull String getReasonDescription() {
+            return reason.getDescription();
         }
         
     }

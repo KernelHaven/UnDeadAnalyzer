@@ -15,7 +15,9 @@
  */
 package net.ssehub.kernel_haven.undead_analyzer;
 
+import static net.ssehub.kernel_haven.util.logic.FormulaBuilder.and;
 import static net.ssehub.kernel_haven.util.logic.FormulaBuilder.not;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -38,6 +40,8 @@ import net.ssehub.kernel_haven.config.DefaultSettings;
 import net.ssehub.kernel_haven.test_utils.TestAnalysisComponentProvider;
 import net.ssehub.kernel_haven.test_utils.TestConfiguration;
 import net.ssehub.kernel_haven.undead_analyzer.DeadCodeFinder.DeadCodeBlock;
+import net.ssehub.kernel_haven.undead_analyzer.DeadCodeFinder.DetailedDeadCodeBlock;
+import net.ssehub.kernel_haven.util.logic.Formula;
 import net.ssehub.kernel_haven.util.logic.Variable;
 import net.ssehub.kernel_haven.util.null_checks.NonNull;
 import net.ssehub.kernel_haven.variability_model.VariabilityModel;
@@ -61,14 +65,15 @@ public class DeadCodeFinderTest {
      * Variability Model:
      * <pre><code>
      * NOT(ALPHA) OR BETA
-     * GAMMA
+     * NOT(GAMMA)
      * </code></pre>
      * Build Model:
      * <pre>{@code 
-     * file1.c -> ALPHA
+     * file1.c -> filePc
      * }</pre>
      * 
      * @param element The code element to add to the source file.
+     * @param filePc The presence condition of the file the block is in.
      * @param considerVmVarsOnly Whether to consider variables from the variability model only.
      * @param detailedAnalysis Whether detailed analysis is configured.
      * 
@@ -76,7 +81,7 @@ public class DeadCodeFinderTest {
      * 
      * @throws SetUpException unwanted.
      */
-    public DeadCodeFinder createComponent(CodeElement<?> element, boolean considerVmVarsOnly,
+    public DeadCodeFinder createComponent(CodeElement<?> element, @NonNull Formula filePc, boolean considerVmVarsOnly,
             boolean detailedAnalysis) throws SetUpException {
         // Generate configuration
         @NonNull TestConfiguration tConfig = null;
@@ -111,7 +116,7 @@ public class DeadCodeFinderTest {
         
         // Create virtual build model
         BuildModel bm = new BuildModel();
-        bm.add(file1, new Variable(alpha.getName()));
+        bm.add(file1, filePc);
         AnalysisComponent<BuildModel> bmComponent = new TestAnalysisComponentProvider<BuildModel>(bm);
         
         
@@ -120,6 +125,32 @@ public class DeadCodeFinderTest {
         Assert.assertNotNull("Error: DeadCodeAnalysis not initialized.", analyser);
         
         return analyser;
+    }
+    
+
+    /**
+     * Initializes a new {@link DeadCodeFinder} and its resources.
+     * Variability Model:
+     * <pre><code>
+     * NOT(ALPHA) OR BETA
+     * NOT(GAMMA)
+     * </code></pre>
+     * Build Model:
+     * <pre>{@code 
+     * file1.c -> ALPHA
+     * }</pre>
+     * 
+     * @param element The code element to add to the source file.
+     * @param considerVmVarsOnly Whether to consider variables from the variability model only.
+     * @param detailedAnalysis Whether detailed analysis is configured.
+     * 
+     * @return The created DeadCodeAnalysis.
+     * 
+     * @throws SetUpException unwanted.
+     */
+    public final DeadCodeFinder createComponent(CodeElement<?> element, boolean considerVmVarsOnly,
+            boolean detailedAnalysis) throws SetUpException {
+        return createComponent(element, new Variable("ALPHA"), considerVmVarsOnly, detailedAnalysis);
     }
 
     /**
@@ -170,10 +201,157 @@ public class DeadCodeFinderTest {
      * @throws SetUpException unwanted.
      */
     @Test
-    public void testNoDeadElementsWithNonVmVars() throws  SetUpException {
+    public void testNoDeadElementsWithNonVmVars() throws SetUpException {
         assertThat(createComponent(new CodeBlock(12, 15, new File("file"),
                 not("NON_VM"), not("NON_VM")), true, false).getNextResult(),
                 nullValue());
+    }
+    
+    /**
+     * Tests the detailed analysis.
+     * 
+     * @throws SetUpException unwanted.
+     */
+    @Test
+    public void testDetailedCppDead() throws SetUpException {
+        /*
+         * The CPP condition alone is not satisfiable: (ALPHA && !ALPHA)
+         */
+        DeadCodeFinder finder = createComponent(new CodeBlock(and("ALPHA", not("ALPHA"))), true, true);
+        
+        DetailedDeadCodeBlock result = (DetailedDeadCodeBlock) finder.getNextResult();
+        
+        assertThat(result, notNullValue());
+        assertThat(result.getReason(), is(DeadCodeFinder.Reason.CPP_NOT_SATISFIABLE));
+        
+        assertThat(finder.getNextResult(), nullValue());
+    }
+    
+    /**
+     * Tests the detailed analysis.
+     * 
+     * @throws SetUpException unwanted.
+     */
+    @Test
+    public void testDetailedCppAndVmDead() throws SetUpException {
+        /*
+         * The CPP condition and the VM are not satisfiable:
+         * CPP: ALPHA && !BETA
+         * VM: !ALPHA || BETA
+         */
+        DeadCodeFinder finder = createComponent(new CodeBlock(and("ALPHA", not("BETA"))), true, true);
+        
+        DetailedDeadCodeBlock result = (DetailedDeadCodeBlock) finder.getNextResult();
+        
+        assertThat(result, notNullValue());
+        assertThat(result.getReason(), is(DeadCodeFinder.Reason.CPP_AND_VM_NOT_SATISFIABLE));
+        
+        assertThat(finder.getNextResult(), nullValue());
+    }
+    
+    /**
+     * Tests the detailed analysis.
+     * 
+     * @throws SetUpException unwanted.
+     */
+    @Test
+    public void testDetailedCppAndFilePCDead() throws SetUpException {
+        /*
+         * The CPP condition and the filePc are dead:
+         * CPP: !ALPHA
+         * filePc: ALPHA
+         */
+        DeadCodeFinder finder = createComponent(new CodeBlock(not("ALPHA")), true, true);
+        
+        DetailedDeadCodeBlock result = (DetailedDeadCodeBlock) finder.getNextResult();
+        
+        assertThat(result, notNullValue());
+        assertThat(result.getReason(), is(DeadCodeFinder.Reason.CPP_AND_FILE_PC_NOT_SATISFIABLE));
+        
+        assertThat(finder.getNextResult(), nullValue());
+    }
+    
+    /**
+     * Tests the detailed analysis.
+     * 
+     * @throws SetUpException unwanted.
+     */
+    @Test
+    public void testDetailedCppAndFilePCAndVMDead() throws SetUpException {
+        /*
+         * The CPP condition and the filePc combined with the VM are dead:
+         * CPP: !BETA
+         * filePc: ALPHA
+         *  -> ALPHA && !BETA
+         * VM: !ALPHA || BETA
+         */
+        DeadCodeFinder finder = createComponent(new CodeBlock(not("BETA")), true, true);
+        
+        DetailedDeadCodeBlock result = (DetailedDeadCodeBlock) finder.getNextResult();
+        
+        assertThat(result, notNullValue());
+        assertThat(result.getReason(), is(DeadCodeFinder.Reason.CPP_AND_FILE_PC_AND_VM_NOT_SATISFIABLE));
+        
+        assertThat(finder.getNextResult(), nullValue());
+    }
+    
+    /**
+     * Tests the detailed analysis.
+     * 
+     * @throws SetUpException unwanted.
+     */
+    @Test
+    public void testDetailedFilePcDead() throws SetUpException {
+        /*
+         * The filePC alone is dead: BETA && !BETA
+         */
+        DeadCodeFinder finder = createComponent(new CodeBlock(new Variable("ALPHA")), and("BETA", not("BETA")),
+                true, true);
+        
+        DetailedDeadCodeBlock result = (DetailedDeadCodeBlock) finder.getNextResult();
+        
+        assertThat(result, notNullValue());
+        assertThat(result.getReason(), is(DeadCodeFinder.Reason.FILE_PC_NOT_SATISFIABLE));
+        
+        assertThat(finder.getNextResult(), nullValue());
+    }
+    
+    /**
+     * Tests the detailed analysis.
+     * 
+     * @throws SetUpException unwanted.
+     */
+    @Test
+    public void testDetailedFilePcAndVmDead() throws SetUpException {
+        /*
+         * The filePC combined with the variability model is dead:
+         * filePC: ALPHA && !BETA
+         * VM: !ALPHA || BETA
+         */
+        DeadCodeFinder finder = createComponent(new CodeBlock(new Variable("ALPHA")), and("ALPHA", not("BETA")),
+                true, true);
+        
+        DetailedDeadCodeBlock result = (DetailedDeadCodeBlock) finder.getNextResult();
+        
+        assertThat(result, notNullValue());
+        assertThat(result.getReason(), is(DeadCodeFinder.Reason.FILE_PC_AND_VM_NOT_SATISFIABLE));
+        
+        assertThat(finder.getNextResult(), nullValue());
+    }
+    
+    /**
+     * Tests the detailed analysis.
+     * 
+     * @throws SetUpException unwanted.
+     */
+    @Test
+    public void testDetailedNotDead() throws SetUpException {
+        /*
+         * The block is not dead.
+         */
+        DeadCodeFinder finder = createComponent(new CodeBlock(new Variable("ALPHA")), true, true);
+        
+        assertThat(finder.getNextResult(), nullValue());
     }
     
 }
