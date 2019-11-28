@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.ssehub.kernel_haven.SetUpException;
 import net.ssehub.kernel_haven.analysis.AnalysisComponent;
 import net.ssehub.kernel_haven.build_model.BuildModel;
 import net.ssehub.kernel_haven.cnf.Cnf;
@@ -38,6 +39,8 @@ import net.ssehub.kernel_haven.code_model.CodeElement;
 import net.ssehub.kernel_haven.code_model.SourceFile;
 import net.ssehub.kernel_haven.config.Configuration;
 import net.ssehub.kernel_haven.config.DefaultSettings;
+import net.ssehub.kernel_haven.config.Setting;
+import net.ssehub.kernel_haven.config.Setting.Type;
 import net.ssehub.kernel_haven.undead_analyzer.DeadCodeFinder.DeadCodeBlock;
 import net.ssehub.kernel_haven.util.FormatException;
 import net.ssehub.kernel_haven.util.ProgressLogger;
@@ -55,6 +58,10 @@ import net.ssehub.kernel_haven.variability_model.VariabilityModel;
  * @author Adam
  */
 public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
+    
+    public static final @NonNull Setting<@NonNull Boolean> DETAILED_SETTING = new Setting<>(
+            "analysis.undead.detailed_checks", Type.BOOLEAN, true, "false", "Whether the DeadCodeFinder should do"
+                    + " a detailed analysis why a block is dead or not.");
 
     protected @NonNull AnalysisComponent<VariabilityModel> vmComponent;
 
@@ -71,19 +78,27 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
     protected Cnf vmCnf;
 
     protected BuildModel bm;
+    
+    private boolean detailedAnalysis;
 
     /**
      * Creates a dead code analysis.
      * 
-     * @param config      The user configuration; not used.
+     * @param config      The pipeline configuration.
      * @param vmComponent The component to provide the variability model.
      * @param bmComponent The component to provide the build model.
      * @param cmComponent The component to provide the code model.
+     * 
+     * @throws SetUpException If reading the configuration fails.
      */
     public DeadCodeFinder(@NonNull Configuration config, @NonNull AnalysisComponent<VariabilityModel> vmComponent,
-            @NonNull AnalysisComponent<BuildModel> bmComponent, @NonNull AnalysisComponent<SourceFile<?>> cmComponent) {
+            @NonNull AnalysisComponent<BuildModel> bmComponent, @NonNull AnalysisComponent<SourceFile<?>> cmComponent)
+            throws SetUpException {
         super(config);
 
+        config.registerSetting(DETAILED_SETTING);
+        detailedAnalysis = config.getValue(DETAILED_SETTING);
+        
         this.vmComponent = vmComponent;
         this.bmComponent = bmComponent;
         this.cmComponent = cmComponent;
@@ -261,10 +276,9 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
          * stores more information.
          * 
          * @param deadElement An element which was identified to be dead.
-         * @param filePc      The presence condition for the complete file, maybe
-         *                    <tt>null</tt>
+         * @param filePc      The presence condition for the complete file.
          */
-        public DeadCodeBlock(@NonNull CodeElement<?> deadElement, @NonNull Formula filePc) {
+        public DeadCodeBlock(@NonNull CodeElement<?> deadElement, @Nullable Formula filePc) {
             this(deadElement.getSourceFile(), deadElement.getLineStart());
             this.endLine = deadElement.getLineEnd();
             this.presenceCondition = deadElement.getPresenceCondition();
@@ -344,6 +358,61 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
             return notNull(result.toString());
         }
 
+    }
+    
+    /**
+     * Possible reasons why a code block is dead.
+     */
+    public enum Reason {
+        
+    }
+    
+    /**
+     * The result of a more detailed analysis of dead code blocks.
+     */
+    @TableRow
+    public static class DetailedDeadCodeBlock extends DeadCodeBlock {
+
+        private @NonNull Reason reason;
+        
+        /**
+         * Creates a dead code block.
+         * 
+         * @param sourceFile The source file.
+         * @param line The line of the element.
+         * @param reason The reason why this block is dead.
+         */
+        public DetailedDeadCodeBlock(@NonNull File sourceFile, int line,  @NonNull Reason reason) {
+            super(sourceFile, line);
+            
+            this.reason = reason;
+        }
+
+        /**
+         * Converts a {@link CodeElement} into a {@link DeadCodeBlock}. This constructor
+         * stores more information.
+         * 
+         * @param deadElement An element which was identified to be dead.
+         * @param filePc The presence condition for the complete file.
+         * @param reason The reason why this block is dead.
+         */
+        public DetailedDeadCodeBlock(@NonNull CodeElement<?> deadElement, @Nullable Formula filePc,
+                @NonNull Reason reason) {
+            super(deadElement, filePc);
+            
+            this.reason = reason;
+        }
+        
+        /**
+         * Returns the reason for the deadness of this block.
+         * 
+         * @return The reason why this block is dead.
+         */
+        @TableElement(name = "Reason", index = 5)
+        public Reason getReason() {
+            return reason;
+        }
+        
     }
 
     @Override

@@ -46,8 +46,9 @@ public class ThreadedDeadCodeFinderTest extends DeadCodeFinderTest {
 
     @Override
     @SuppressWarnings("null")
-    public DeadCodeFinder createComponent(CodeElement<?> element, boolean considerVmVarsOnly) throws SetUpException {
-     // Generate configuration
+    public DeadCodeFinder createComponent(CodeElement<?> element, boolean considerVmVarsOnly,
+            boolean detailedAnalysis) throws SetUpException {
+        // Generate configuration
         @NonNull TestConfiguration tConfig = null;
         Properties config = new Properties();
         try {
@@ -56,6 +57,8 @@ public class ThreadedDeadCodeFinderTest extends DeadCodeFinderTest {
             Assert.fail("Could not generate test configuration: " + e.getMessage());
         }
         tConfig.setValue(DefaultSettings.ANALYSIS_USE_VARMODEL_VARIABLES_ONLY, considerVmVarsOnly);
+        tConfig.registerSetting(DeadCodeFinder.DETAILED_SETTING);
+        tConfig.setValue(DeadCodeFinder.DETAILED_SETTING, detailedAnalysis);
         
         // Load variability model
         Set<VariabilityVariable> variables = new HashSet<>();
