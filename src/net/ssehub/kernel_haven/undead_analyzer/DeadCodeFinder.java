@@ -232,11 +232,16 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
                 try {
                     if (!satUtils.isSat(filePc)) { // check filePC alone
                         foundResult = true;
-                        result.add(new DetailedDeadCodeBlock(sourceFile.getPath(), 0, Reason.FILE_PC_NOT_SATISFIABLE));
+                        DetailedDeadCodeBlock block = new DetailedDeadCodeBlock(sourceFile.getPath(), 0,
+                                Reason.FILE_PC_NOT_SATISFIABLE);
+                        block.setFilePc(filePc);
+                        result.add(block);
                     } else if (!satUtils.isVmSat(filePc)) { // check filePC and VM
                         foundResult = true;
-                        result.add(new DetailedDeadCodeBlock(sourceFile.getPath(), 0,
-                                Reason.FILE_PC_AND_VM_NOT_SATISFIABLE));
+                        DetailedDeadCodeBlock block = new DetailedDeadCodeBlock(sourceFile.getPath(), 0,
+                                Reason.FILE_PC_AND_VM_NOT_SATISFIABLE);
+                        block.setFilePc(filePc);
+                        result.add(block);
                     }
                 } catch (SolverException | ConverterException e) {
                     LOGGER.logException("Exception while trying to check file PC", e);
@@ -368,6 +373,15 @@ public class DeadCodeFinder extends AnalysisComponent<DeadCodeBlock> {
         @TableElement(name = "File PC", index = 1)
         public @Nullable Formula getFilePc() {
             return filePc;
+        }
+        
+        /**
+         * Changes the file presence condition.
+         * 
+         * @param filePc The new filePc.
+         */
+        public void setFilePc(Formula filePc) {
+            this.filePc = filePc;
         }
 
         /**
